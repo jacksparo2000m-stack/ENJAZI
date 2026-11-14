@@ -61,6 +61,7 @@ jobs:
           npm run build:native
           npx cap add android
           npx cap sync android
+          python3 tools/install_native_notifications.py
 
           G=android/app/build.gradle
           test -f "$G"
