@@ -42,12 +42,24 @@ nav button{flex:1;padding:10px;display:flex;flex-direction:column;align-items:ce
 <script>
 const $=s=>document.querySelector(s),K='pt2',uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),p2=n=>String(n).padStart(2,'0');
 const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
-let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
-S=Object.assign({lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[]},S||{});
+const DEFAULT_STATE=()=>({lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[]});
+let S=DEFAULT_STATE(),BOOT_RAW=null,BOOT_DATA=null,BOOT_ERROR='',RECOVERY=false,SAVE_FAILED=false,LAST_GOOD_RAW=null;
+try{BOOT_RAW=localStorage.getItem(K);if(BOOT_RAW!==null)BOOT_DATA=JSON.parse(BOOT_RAW)}catch(e){BOOT_ERROR=String(e&&e.message||e||'Storage read failed');RECOVERY=true}
+if(!RECOVERY&&BOOT_DATA&&typeof BOOT_DATA==='object'&&!Array.isArray(BOOT_DATA))S=Object.assign(DEFAULT_STATE(),BOOT_DATA);
 let v='todo',f={tab:'all',cat:'',q:'',open:0},D=null,P={g:null,i:null},ip=null;
-const mig=(s=S)=>{s.tasks.forEach(x=>{if(!Array.isArray(x.rms))x.rms=x.rm>=0?[x.rm]:[]});s.groups.forEach(g=>g.it.forEach(i=>{if(!Array.isArray(i.ls)){i.ls=[];for(let k=1;k<=(i.done||0);k++)i.ls.push({id:uid(),n:'محاضرة '+k,at:i.last||Date.now()})}i.ls.forEach(l=>{if(!l.id)l.id=uid();if(!Number.isFinite(l.at))l.at=Date.now()})}))};mig();
+const MAX_TASKS=10000,MAX_GROUPS=500,MAX_ITEMS=5000,MAX_LECTURES=50000,MAX_SUBTASKS=50000;
+const mig=(s)=>{let generated=0;
+ if(!s||!Array.isArray(s.tasks)||!Array.isArray(s.groups))throw new Error('Invalid state shape');
+ s.tasks.forEach(x=>{if(!Array.isArray(x.rms))x.rms=Number.isSafeInteger(x.rm)&&x.rm>=0?[x.rm]:[]});
+ s.groups.forEach(g=>{if(!g||!Array.isArray(g.it))throw new Error('Invalid section');
+  g.it.forEach(i=>{if(!Array.isArray(i.ls)){const n=Number.isSafeInteger(i.done)&&i.done>=0?i.done:0;if(n>5000||generated+n>MAX_LECTURES)throw new Error('Legacy lecture count exceeds safe migration limit');generated+=n;i.ls=[];for(let k=1;k<=n;k++)i.ls.push({id:uid(),n:'محاضرة '+k,at:i.last||Date.now()})}
+   i.ls.forEach(l=>{if(!l.id)l.id=uid();if(!Number.isFinite(l.at))l.at=Date.now()});
+  });
+ });
+ return s;
+};
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e});
-const save=()=>{   let ok=true;   try{     localStorage.setItem(K,JSON.stringify(S));   }catch(e){     ok=false;     console.error('ENJAZI save failed:',e);     if(typeof toast==='function')toast(T('فشل حفظ البيانات! مساحة التخزين قد تكون ممتلئة.','Failed to save data! Storage may be full.'));   }   clearTimeout(save.t);   save.t=setTimeout(()=>window.sched&&sched(),300);   return ok; },T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
+const save=()=>{if(RECOVERY)return false;let ok=false;try{const payload=JSON.stringify(S);localStorage.setItem(K,payload);ok=true;SAVE_FAILED=false;LAST_GOOD_RAW=payload}catch(e){SAVE_FAILED=true;console.error('ENJAZI save failed:',e);if(typeof toast==='function')toast(T('فشل حفظ البيانات! لم يتم تأكيد التغيير. تحقق من مساحة التخزين.','Save failed. The change was not confirmed; check available storage.'))}clearTimeout(save.t);save.t=ok?setTimeout(()=>window.sched&&sched(),300):null;return ok},T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
 const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const due=x=>x.d?new Date(x.d+'T'+(x.tm||'23:59')):null,od=x=>!x.x&&due(x)&&due(x)<new Date();
 const pct=(a,b)=>b?Math.round(a/b*100):0,bar=p=>`<div class="bar"><i style="width:${p}%"></i></div>`;
@@ -55,8 +67,10 @@ const fdt=(d,tm)=>d?new Date(d+'T00:00').toLocaleDateString(loc(),{day:'numeric'
 const t12=tm=>{if(!tm)return'--:--';const[h,m]=tm.split(':').map(Number);return(h%12||12)+':'+p2(m)+' '+(h>=12?T('م','PM'):T('ص','AM'))},nk=s=>String(s??'').replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)),num=s=>parseInt(nk(s))||0,ord=l=>{const m=nk(l.n).match(/\d+/);return m?+m[0]:1e9+l.at/1e3},nx=I=>Math.max(0,...I.ls.map(l=>{const m=nk(l.n).match(/\d+/);return m?+m[0]:0}))+1;
 const toast=m=>{const t=$('#ts');t.textContent=m;t.hidden=0;setTimeout(()=>t.hidden=1,4000)};
 function clock(){const e=$('#clk');if(e)e.textContent=new Date().toLocaleString(loc(),{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+function recoveryView(){const raw=BOOT_RAW===null?'':BOOT_RAW;return `<h1>⚠ ${T('حماية البيانات','Data protection')}</h1><div class="card"><b>${T('لم نتمكن من تحميل بياناتك بأمان','Your saved data could not be loaded safely')}</b><p class="mu" style="margin-top:8px">${E(BOOT_ERROR||'تعذر التحقق من بنية البيانات أو ترحيلها.')}</p><p style="margin-top:10px">${T('التطبيق متوقف مؤقتًا عن التعديل حتى لا يستبدل بياناتك ببيانات فارغة. صدّر النسخة الخام أولًا، أو أعد المحاولة.','Editing is paused so the app cannot overwrite your data with an empty state. Export the raw data first, or retry.')}</p></div><button class="btn w" data-recovery="export" ${raw?'':'disabled'}>${T('تصدير البيانات الخام','Export raw data')}</button><button class="btn o w" data-recovery="import">${T('استيراد نسخة احتياطية سليمة','Import a valid backup')}</button><button class="btn o w" data-recovery="retry">${T('إعادة المحاولة','Retry')}</button>${BOOT_RAW!==null?`<button class="btn o w" data-recovery="reset">${T('بدء جديد بعد حفظ نسخة من البيانات القديمة','Start fresh after preserving old data')}</button>`:''}`;}
 function render(){const h=document.documentElement;h.lang=S.lang;h.dir=S.lang==='ar'?'rtl':'ltr';h.dataset.th=S.th;h.dataset.fs=S.fs;
-$('#app').innerHTML=v==='todo'?todo():v==='track'?track():sets();$('#fab').hidden=v!=='todo';
+if(RECOVERY){$('#app').innerHTML=recoveryView();$('#fab').hidden=true;$('#nav').hidden=true;$('#nav').innerHTML='';$('#sh').hidden=true;return}
+$('#nav').hidden=false;$('#app').innerHTML=v==='todo'?todo():v==='track'?track():sets();$('#fab').hidden=v!=='todo';
 $('#nav').innerHTML=[['todo','✓',T('المهام','Tasks')],['track','▤',T('الإنجاز','Progress')],['set','⚙',T('الإعدادات','Settings')]].map(([k,i,l])=>`<button class="${v===k?'on':''}" data-a="nv" data-i="${k}">${i}<small>${l}</small></button>`).join('');clock()}
 const card=x=>{const s=x.sub||[],sd=s.filter(a=>a.x).length;return `<div class="task${x.x?' dn':''}"><button class="ck p${x.p}" data-a="tg" data-i="${x.id}">${x.x?'✓':''}</button><div class="bd" data-a="ed" data-i="${x.id}"><b>${E(x.t)}</b>${x.n?`<p>${E(x.n)}</p>`:''}<div class="mt">${x.c?`<span class="tag">${E(x.c)}</span>`:''}${x.d?`<span class="${od(x)?'ov':''}">📅 ${fdt(x.d,x.tm)}${x.x?'':' · '+cd(x)}</span>`:''}${(x.rms||[]).length?'<span>🔔</span>':''}${x.rp?'<span>↻</span>':''}${s.length?`<span>☑ ${sd}/${s.length}</span>`:''}${x.lk?'<span>▤</span>':''}</div></div><button class="ic" data-a="del" data-i="${x.id}">✕</button></div>`};
 function lst(){const L=S.tasks.filter(x=>(!f.cat||x.c===f.cat)&&(!f.q||(x.t+' '+(x.n||'')).toLowerCase().includes(f.q)));
@@ -104,7 +118,7 @@ ${lk.length?`<label>${T('اربطها بمادة في جدول الإنجاز','
 <div class="two" style="margin-top:16px"><button class="btn o" data-a="cx">${T('إلغاء','Cancel')}</button><button class="btn" data-a="sv">${T('حفظ','Save')}</button></div></div>`;$('#sh').hidden=0;wset()}
 const lkd=(x,dl)=>{if(!x.lk)return;const[g,i]=x.lk.split(':'),t=(S.groups.find(a=>a.id===g)||{it:[]}).it.find(a=>a.id===i);if(!t)return;const id='t'+x.id;t.ls=t.ls.filter(l=>l.id!==id);if(dl>0)t.ls.push({id,n:x.t,at:Date.now()})};
 const nd=(d,r)=>{const t=new Date(d+'T00:00');r==='d'?t.setDate(t.getDate()+1):r==='w'?t.setDate(t.getDate()+7):r==='m'?t.setMonth(t.getMonth()+1):t.setFullYear(t.getFullYear()+1);return iso(t)};
-const pr=(m,def)=>{const r=prompt(m,def);return r&&r.trim()?r.trim():null},it2=i=>{const[g,k]=i.split('|'),G=S.groups.find(a=>a.id===g);return[G,G.it.find(a=>a.id===k)]},up=()=>{if(save())render()};
+const pr=(m,def)=>{const r=prompt(m,def);return r&&r.trim()?r.trim():null},it2=i=>{const[g,k]=i.split('|'),G=S.groups.find(a=>a.id===g);return[G,G.it.find(a=>a.id===k)]},up=()=>{if(save())render();else{if(LAST_GOOD_RAW!==null){try{S=JSON.parse(LAST_GOOD_RAW)}catch(e){}}render()}};
  const unlinkItems=(groupId,items)=>{const keys=new Set(items.map(i=>groupId+':'+i.id));S.tasks.forEach(x=>{if(x.lk&&keys.has(x.lk))x.lk='';});};
 const H={nv:i=>{v=i;render()},tb:i=>{f.tab=i;render()},fc:i=>{f.cat=i;render()},co:()=>{f.open=!f.open;$('#lst').innerHTML=lst()},add:()=>openSheet(),ed:i=>openSheet(i),
 tg:i=>{const x=S.tasks.find(a=>a.id===i);x.x=x.x?0:Date.now();lkd(x,x.x?1:-1);if(x.x&&x.rp&&x.d)S.tasks.push({...x,id:uid(),x:0,fr:[],d:nd(x.d,x.rp),sub:(x.sub||[]).map(s=>({...s,x:0}))});up();pins()},
@@ -113,7 +127,7 @@ clr:()=>{if(confirm(T('مسح كل المهام المنجزة؟','Clear all com
 qd:i=>{sync();const t=new Date();t.setDate(t.getDate()+ +i);D.d=iso(t);draw()},pr:i=>{sync();D.p=+i;draw()},cc:i=>{sync();D.c=i;draw()},
 as:()=>{sync();const e=$('#fs').value.trim();if(e){D.sub.push({t:e,x:0});draw()}},rs:i=>{sync();D.sub.splice(+i,1);draw()},ts:i=>{sync();D.sub[+i].x=D.sub[+i].x?0:1;draw()},
 cx:()=>{D=null;$('#sh').hidden=1},sv:()=>{sync();if(!D.t.trim())return toast(T('اكتب عنوان المهمة','Enter a title'));D.t=D.t.trim();D.fr=[];
-const n=S.tasks.findIndex(x=>x.id===D.id);if(n<0)S.tasks.push(D);else{if(S.tasks[n].lk!==D.lk&&S.tasks[n].x){lkd(S.tasks[n],-1);D.x&&lkd(D,1)}S.tasks[n]=D}
+const n=S.tasks.findIndex(x=>x.id===D.id);if(n<0)S.tasks.push(D);else{const wasDone=!!S.tasks[n].x;if(wasDone)lkd(S.tasks[n],-1);S.tasks[n]=D;if(D.x)lkd(D,1)}
 if(D.c&&!S.cats.includes(D.c))S.cats.push(D.c);D=null;$('#sh').hidden=1;up();pins()},
 og:i=>{P={g:i,i:null};render()},oi:i=>{P.i=i;render()},bk:()=>{P.i?P.i=null:P.g=null;render()},
 ag:()=>{const n=pr(T('اسم القسم؟ (مثال: مواد الكلية)','Section name?'));if(n){S.groups.push({id:uid(),n,it:[]});up()}},
@@ -137,7 +151,13 @@ try{const cs=await SH.canShare();if(cs&&cs.value===false)return toast(T('مشا�
 let uri;try{const result=await FS.writeFile({path:nm,data:js,directory:NP.Directory.Cache,encoding:NP.Encoding.UTF8});uri=result&&result.uri;if(!uri)throw new Error('Filesystem returned no file URI')}catch(x){return toast(T('تعذّر إنشاء ملف النسخة الاحتياطية: ','Could not create the backup file: ')+(x&&x.message||x))}
 try{await SH.share({title:nm,text:T('نسخة احتياطية من تطبيق إنجازي','Enjazi app backup'),dialogTitle:T('اختار مكان حفظ النسخة الاحتياطية','Choose where to save the backup'),files:[uri]});toast(T('تم فتح قائمة المشاركة. اختار تطبيقًا أو مكانًا لحفظ الملف.','Share sheet opened. Choose an app or destination to save the file.'))}catch(x){const m=String(x&&x.message||x);toast(/cancel/i.test(m)?T('تم إغلاق المشاركة. لو لم تحفظ الملف، جرّب التصدير مرة أخرى.','Sharing was closed. If you did not save the file, export again.'):T('تعذّر فتح قائمة المشاركة: ','Could not open the share sheet: ')+m)}},
 im:()=>$('#imp').click()};
-document.addEventListener('click',e=>{if(e.target.id==='sh')return H.cx();const b=e.target.closest('[data-a]');if(b&&H[b.dataset.a])H[b.dataset.a](b.dataset.i,b)});
+document.addEventListener('click',e=>{const rb=e.target.closest('[data-recovery]');if(rb){const a=rb.dataset.recovery;
+ if(a==='export'&&BOOT_RAW!==null){try{const blob=new Blob([BOOT_RAW],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),el=document.createElement('a');el.href=url;el.download='enjazi-raw-recovery-'+Date.now()+'.json';document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}catch(x){alert('تعذر تصدير البيانات الخام: '+(x.message||x))}}
+ if(a==='import')$('#imp').click();
+ if(a==='retry')location.reload();
+ if(a==='reset'&&BOOT_RAW!==null){if(!confirm('سيتم حفظ البيانات القديمة في مفتاح منفصل ثم بدء التطبيق ببيانات فارغة. هل أنت متأكد؟'))return;try{localStorage.setItem(K+'_recovery_'+Date.now(),BOOT_RAW);const fresh=DEFAULT_STATE();const freshRaw=JSON.stringify(fresh);localStorage.setItem(K,freshRaw);S=fresh;LAST_GOOD_RAW=freshRaw;RECOVERY=false;BOOT_ERROR='';BOOT_RAW=JSON.stringify(fresh);render();toast('تم حفظ نسخة البيانات القديمة وبدء التطبيق')}catch(x){alert('لم يتم بدء التطبيق؛ تعذر حفظ النسخة القديمة أو الحالة الجديدة: '+(x.message||x))}}
+ return}
+ if(RECOVERY)return;if(e.target.id==='sh')return H.cx();const b=e.target.closest('[data-a]');if(b&&H[b.dataset.a])H[b.dataset.a](b.dataset.i,b)});
 document.addEventListener('input',e=>{if(e.target.id==='q'){f.q=e.target.value.toLowerCase();$('#lst').innerHTML=lst()}});
 const vld=o=>{
 const B=(v,t)=>typeof v===t,N=v=>B(v,'number')&&Number.isFinite(v),R=v=>v!==null&&B(v,'object')&&!Array.isArray(v),AR=Array.isArray;
@@ -148,7 +168,9 @@ const date=v=>{if(!B(v,'string')||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;co
 const time=v=>B(v,'string')&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 const ids=new Set(),addId=(v)=>{if(!text(v,256)||!v.trim()||ids.has(v))return false;ids.add(v);return true};
 if(!R(o)||(o.tasks===undefined&&o.groups===undefined))return T('هذا الملف ليس نسخة احتياطية من إنجازي','This is not an Enjazi backup file');
-if((has(o.tasks)&&!AR(o.tasks))||(has(o.groups)&&!AR(o.groups))||(has(o.cats)&&!(AR(o.cats)&&o.cats.every(c=>text(c,200)))))return W('بنية الأقسام أو المهام','tasks/sections structure');
+if((has(o.tasks)&&!AR(o.tasks))||(has(o.groups)&&!AR(o.groups))||(has(o.cats)&&!(AR(o.cats)&&o.cats.length<=1000&&o.cats.every(c=>text(c,200)))))return W('بنية الأقسام أو المهام','tasks/sections structure');
+if((o.tasks||[]).length>MAX_TASKS||(o.groups||[]).length>MAX_GROUPS)return W('عدد المهام أو الأقسام أكبر من الحد الآمن','task or section count exceeds safe limits');
+let totalItems=0,totalLectures=0,totalSubs=0;
 if(has(o.lang)&&!['ar','en'].includes(o.lang))return W('اللغة','language');
 if(has(o.th)&&!['light','dark','sepia'].includes(o.th))return W('المظهر','theme');
 if(has(o.fs)&&!['s','m','l'].includes(o.fs))return W('حجم الخط','font size');
@@ -168,18 +190,22 @@ for(const [i,x] of (o.tasks||[]).entries()){
  if(has(x.x)&&!(B(x.x,'boolean')||(N(x.x)&&x.x>=0&&stamp(x.x))))return err('حالة الإنجاز','completion state');
  if(has(x.fired)&&!(B(x.fired,'boolean')||(N(x.fired)&&[0,1].includes(x.fired))))return err('حالة التذكير','reminder state');
  if(has(x.lk)&&!text(x.lk,600))return err('ربط المادة','linked item');
- if(has(x.sub)&&!(AR(x.sub)&&x.sub.every(a=>R(a)&&text(a.t,1000)&&(!has(a.x)||B(a.x,'boolean')||a.x===0||a.x===1))))return err('المهام الفرعية','subtasks');
+ if(has(x.sub)&&!(AR(x.sub)&&x.sub.length<=1000&&x.sub.every(a=>R(a)&&text(a.t,1000)&&(!has(a.x)||B(a.x,'boolean')||a.x===0||a.x===1))))return err('المهام الفرعية','subtasks');
+  totalSubs+=(x.sub||[]).length;if(totalSubs>MAX_SUBTASKS)return W('عدد المهام الفرعية أكبر من الحد الآمن','subtask count exceeds safe limit');
 }
 for(const [i,g] of (o.groups||[]).entries()){
  const label=T('القسم رقم '+(i+1),'section #'+(i+1));
  if(!R(g)||!addId(g.id)||!text(g.n,300)||!g.n.trim()||!AR(g.it))return W(label+' — بيانات القسم أو معرّف مكرر',label+' — invalid section data or duplicate ID');
+ totalItems+=g.it.length;if(totalItems>MAX_ITEMS)return W('عدد المواد أكبر من الحد الآمن','item count exceeds safe limit');
  for(const [j,it] of g.it.entries()){
   const itemLabel=label+T(' — المادة رقم ',' — item #')+(j+1),err=(a,b)=>W(itemLabel+' — '+a,itemLabel+' — '+b);
   if(!R(it)||!addId(it.id)||!text(it.n,500)||!it.n.trim())return err('بيانات المادة أو معرّف مكرر','invalid item data or duplicate ID');
   if(has(it.total)&&!(N(it.total)&&it.total>=0&&it.total<=1000000))return err('العدد الكلي','total count');
-  if(has(it.done)&&!(Number.isSafeInteger(it.done)&&it.done>=0&&it.done<=1000000))return err('عدد المنجز','completed count');
+  if(has(it.done)&&!(Number.isSafeInteger(it.done)&&it.done>=0&&it.done<=5000))return err('عدد المنجز أكبر من حد الترحيل الآمن','completed count exceeds safe migration limit');
   if(has(it.last)&&!stamp(it.last))return err('تاريخ آخر إنجاز','last completion timestamp');
   if(has(it.ls)&&!AR(it.ls))return err('قائمة المحاضرات','lecture list');
+   if((it.ls||[]).length>MAX_LECTURES-totalLectures)return err('إجمالي المحاضرات أكبر من الحد الآمن','aggregate lecture count exceeds safe limit');
+   totalLectures+=(it.ls||[]).length;
   for(const [k,l] of (it.ls||[]).entries()){
    const lectureLabel=itemLabel+T(' — المحاضرة رقم ',' — lecture #')+(k+1);
    if(!R(l)||!text(l.n,1000)||!l.n.trim())return W(lectureLabel+' — الاسم غير صحيح',lectureLabel+' — invalid name');
@@ -217,8 +243,8 @@ $('#imp').addEventListener('change',e=>{
   if(er)return toast(er);
 
   if(!confirm(T(
-   `سيتم استبدال بياناتك الحالية (${S.tasks.length} مهمة، ${cn(S)} مادة) ببيانات الملف (${(o.tasks||[]).length} مهمة، ${cn(o)} مادة). هل تريد المتابعة؟`,
-   `Your current data (${S.tasks.length} tasks, ${cn(S)} items) will be replaced by the file's data (${(o.tasks||[]).length} tasks, ${cn(o)} items). Continue?`
+   `سيتم استبدال بياناتك الحالية (${RECOVERY?'غير متاحة':S.tasks.length+' مهمة، '+cn(S)+' مادة'}) ببيانات الملف (${(o.tasks||[]).length} مهمة، ${cn(o)} مادة). هل تريد المتابعة؟`,
+   `Your current data (${RECOVERY?'unavailable':S.tasks.length+' tasks, '+cn(S)+' items'}) will be replaced by the file's data (${(o.tasks||[]).length} tasks, ${cn(o)} items). Continue?`
   )))return toast(T('تم الإلغاء — لم تتغيّر بياناتك','Cancelled — your data was not changed'));
 
   
@@ -291,24 +317,37 @@ const P=/عصر|مغرب|مساء|ليل|عشاء|pm/i,A=/صباح|صبح|فجر
 if(m=cut(/(?:(?:الساعة|الساعه|at)\s*)?(\d{1,2})(?::(\d{2}))?\s*(صباح\S*|الصبح|الفجر|الظهر|الضهر|ظهر\S*|عصر\S*|العصر|المغرب|مغرب|مساء\S*|بالليل|الليل|العشاء|pm|am)/i))tm=hm(fx(+m[1],m[3]),+m[2]);else if(m=cut(/(?:الساعة|الساعه|at)\s*(\d{1,2})(?::(\d{2}))?/i))tm=hm(+m[1],+m[2]);else if(m=cut(/(\d{1,2}):(\d{2})/))tm=hm(+m[1],+m[2])}
 const t=s.replace(/\s+/g,' ').trim();if(!t)return null;if(tm&&!dt){d=new Date();const[h,i]=tm.split(':').map(Number);d.setHours(h,i,0,0);if(d<now)d.setDate(d.getDate()+1);dt=iso(d)}
 return{id:uid(),t,n:'',d:dt,tm,rms:tm?[0]:[],rp:'',p:2,c:'',pin:true,sub:[],lk:'',x:0}}
-async function sched(){if(!LN)return;try{const pd=await LN.getPending();if(pd.notifications.length)await LN.cancel({notifications:pd.notifications});
+async function sched(){if(!LN||RECOVERY)return;try{
 const now=Date.now(),N=[],want=new Set(),gone=new Set(S.pin||[]);
 S.tasks.forEach(x=>{const ex={tid:x.id};if(x.x){gone.add(hid('p'+x.id));gone.add(hid(x.id+'|s'));(x.rms||[]).forEach(r=>gone.add(hid(x.id+'|'+r)));return}const d=due(x);
 if(d)(x.rms||[]).forEach(r=>{const at=d-r*6e4;if(at>now)N.push({id:hid(x.id+'|'+r),title:x.t,body:(r?T('بعد ','In ')+rl(r):T('حان الآن','Due now'))+(x.n?' · '+x.n:''),channelId:'rem',actionTypeId:'task',extra:ex,schedule:{at:new Date(at),allowWhileIdle:true}})});
 if(x.sn>now)N.push({id:hid(x.id+'|s'),title:'⏰ '+x.t,body:T('تذكير مؤجَّل','Snoozed reminder'),channelId:'rem',actionTypeId:'task',extra:ex,schedule:{at:new Date(x.sn),allowWhileIdle:true}});
 if(x.pin&&x.p>=2){const i=hid('p'+x.id);want.add(i);N.push({id:i,title:x.t,body:(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),channelId:'pin',ongoing:true,autoCancel:false,actionTypeId:'task',extra:ex})}});
-want.forEach(i=>gone.delete(i));if(gone.size)await LN.removeDeliveredNotifications({notifications:[...gone].map(id=>({id}))});
-S.pin=[...want];try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(N.length)await LN.schedule({notifications:N})}catch(e){}}
-async function initN(){if(!LN)return;try{await LN.requestPermissions();await LN.createChannel({id:'rem',name:T('تذكيرات المهام','Task reminders'),importance:5,vibration:true});await LN.createChannel({id:'pin',name:T('مهام ثابتة','Pinned tasks'),importance:2});
+want.forEach(i=>gone.delete(i));
+const oldPin=S.pin;S.pin=[...want];try{const saved=JSON.stringify(S);localStorage.setItem(K,saved);LAST_GOOD_RAW=saved;SAVE_FAILED=false}catch(e){S.pin=oldPin;SAVE_FAILED=true;console.error('ENJAZI notification state save failed:',e);return}
+const pd=await LN.getPending();if(pd.notifications.length)await LN.cancel({notifications:pd.notifications});
+if(gone.size)await LN.removeDeliveredNotifications({notifications:[...gone].map(id=>({id}))});
+if(N.length)await LN.schedule({notifications:N})}catch(e){console.error('ENJAZI notification scheduling failed:',e)}}
+async function initN(){if(!LN||RECOVERY)return;try{await LN.requestPermissions();await LN.createChannel({id:'rem',name:T('تذكيرات المهام','Task reminders'),importance:5,vibration:true});await LN.createChannel({id:'pin',name:T('مهام ثابتة','Pinned tasks'),importance:2});
 await LN.registerActionTypes({types:[{id:'task',actions:[{id:'snooze',title:T('تأجيل 10 د','Snooze 10m')},{id:'done',title:T('تم ✓','Done ✓')}]}]});
-LN.addListener('localNotificationActionPerformed',e=>{const x=S.tasks.find(a=>a.id===(e.notification.extra||{}).tid);if(!x)return;if(e.actionId==='done'&&!x.x)H.tg(x.id);else if(e.actionId==='snooze'){x.sn=Date.now()+6e5;save();toast(T('تم التأجيل 10 دقائق','Snoozed 10 min'))}});sched()}catch(e){}}
+LN.addListener('localNotificationActionPerformed',e=>{const x=S.tasks.find(a=>a.id===(e.notification.extra||{}).tid);if(!x)return;if(e.actionId==='done'&&!x.x)H.tg(x.id);else if(e.actionId==='snooze'){const old=x.sn;x.sn=Date.now()+6e5;if(save())toast(T('تم التأجيل 10 دقائق','Snoozed 10 min'));else if(old===undefined)delete x.sn;else x.sn=old}});sched()}catch(e){}}
 const gr=()=>'Notification'in window&&Notification.permission==='granted';
 async function ntf(ti,bo,tag,pin){if(!gr())return false;try{const r=await navigator.serviceWorker.ready;await r.showNotification(ti,{body:bo,tag,icon:'icon-192.png',requireInteraction:pin,silent:pin,data:{pin,title:ti,body:bo}});return true}catch(e){return false}}
-async function pins(){if(!gr())return;try{const r=await navigator.serviceWorker.ready,w=S.tasks.filter(x=>!x.x&&x.pin&&x.p>=2),cur=await r.getNotifications(),tg=new Set(w.map(x=>'pin-'+x.id));
+async function pins(){if(RECOVERY||!gr())return;try{const r=await navigator.serviceWorker.ready,w=S.tasks.filter(x=>!x.x&&x.pin&&x.p>=2),cur=await r.getNotifications(),tg=new Set(w.map(x=>'pin-'+x.id));
 cur.forEach(n=>{if(n.tag.startsWith('pin-')&&!tg.has(n.tag))n.close()});const have=new Set(cur.map(n=>n.tag));
 w.forEach(x=>{if(!have.has('pin-'+x.id))ntf(x.t,(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),'pin-'+x.id,true)})}catch(e){}}
-function tick(){if(LN)return;const n=Date.now();S.tasks.forEach(x=>{const d=due(x);if(x.x||!d)return;x.fr=x.fr||[];(x.rms||[]).forEach(r=>{if(!x.fr.includes(r)&&n>=d-r*6e4&&n<d+864e5){x.fr.push(r);save();ntf(x.t,r?T('بعد ','In ')+rl(r):T('حان موعد المهمة','Task is due'),'rm-'+x.id+r,false).then(ok=>ok||toast('🔔 '+x.t))}})})}
-if(!CAP&&'serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').then(()=>pins()).catch(()=>{});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){tick();pins();sched();render()}});
-setInterval(()=>{tick();clock();if(v==='todo'&&$('#lst')&&$('#sh').hidden&&document.activeElement.tagName!=='INPUT')$('#lst').innerHTML=lst()},20000);render();tick();initN();
+function tick(){if(LN||RECOVERY)return;const n=Date.now();S.tasks.forEach(x=>{const d=due(x);if(x.x||!d)return;x.fr=x.fr||[];(x.rms||[]).forEach(r=>{if(!x.fr.includes(r)&&n>=d-r*6e4&&n<d+864e5){x.fr.push(r);if(!save()){x.fr.pop();return}ntf(x.t,r?T('بعد ','In ')+rl(r):T('حان موعد المهمة','Task is due'),'rm-'+x.id+r,false).then(ok=>ok||toast('🔔 '+x.t))}})})}
+function bootState(){
+ if(BOOT_ERROR){RECOVERY=true;return}
+ if(BOOT_RAW===null){S=DEFAULT_STATE();return}
+ const firstError=vld(BOOT_DATA);if(firstError){BOOT_ERROR=firstError;RECOVERY=true;return}
+ try{const candidate=JSON.parse(JSON.stringify(BOOT_DATA));Object.assign(candidate,DEFAULT_STATE(),candidate);mig(candidate);const secondError=vld(candidate);if(secondError){BOOT_ERROR=secondError;RECOVERY=true;return}S=candidate;
+  const migrated=JSON.stringify(candidate);LAST_GOOD_RAW=BOOT_RAW;if(migrated!==BOOT_RAW){try{localStorage.setItem(K,migrated);BOOT_RAW=migrated;LAST_GOOD_RAW=migrated}catch(e){BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);RECOVERY=true}}
+ }catch(e){BOOT_ERROR='تعذر ترحيل البيانات بأمان: '+(e&&e.message||e);RECOVERY=true}
+}
+bootState();
+if(!CAP&&'serviceWorker'in navigator&&!RECOVERY)navigator.serviceWorker.register('sw.js').then(()=>pins()).catch(()=>{});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!RECOVERY){tick();pins();sched();render()}});
+setInterval(()=>{if(RECOVERY)return;tick();clock();if(v==='todo'&&$('#lst')&&$('#sh').hidden&&document.activeElement.tagName!=='INPUT')$('#lst').innerHTML=lst()},20000);
+render();if(!RECOVERY){tick();initN();}
 </script></body></html>
