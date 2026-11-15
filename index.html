@@ -156,7 +156,7 @@ document.addEventListener('click',e=>{const rb=e.target.closest('[data-recovery]
  if(a==='import')$('#imp').click();
  if(a==='retry')location.reload();
  if(a==='start'&&BOOT_RAW===null&&!BOOT_READ_FAILED){if(!confirm('لم يتم العثور على بيانات محلية قابلة للقراءة. هل أنت متأكد أن هذه بداية استخدام جديدة؟'))return;try{const fresh=DEFAULT_STATE(),raw=JSON.stringify(fresh);localStorage.setItem(K,raw);if(localStorage.getItem(K)!==raw)throw new Error('Storage verification failed');S=fresh;LAST_GOOD_RAW=raw;BOOT_RAW=raw;BOOT_DATA=fresh;RECOVERY=false;BOOT_ERROR='';render();if(LN)initN();toast('تم بدء التطبيق بحالة جديدة')}catch(x){alert('تعذر بدء التطبيق بأمان: '+(x.message||x))}}
- if(a==='reset'&&BOOT_RAW!==null){if(!confirm('سيتم حفظ البيانات القديمة في مفتاح منفصل ثم بدء التطبيق ببيانات فارغة. هل أنت متأكد؟'))return;try{localStorage.setItem(K+'_recovery_'+Date.now(),BOOT_RAW);const fresh=DEFAULT_STATE();const freshRaw=JSON.stringify(fresh);localStorage.setItem(K,freshRaw);S=fresh;LAST_GOOD_RAW=freshRaw;RECOVERY=false;BOOT_ERROR='';BOOT_RAW=JSON.stringify(fresh);render();toast('تم حفظ نسخة البيانات القديمة وبدء التطبيق')}catch(x){alert('لم يتم بدء التطبيق؛ تعذر حفظ النسخة القديمة أو الحالة الجديدة: '+(x.message||x))}}
+ if(a==='reset'&&BOOT_RAW!==null){if(!confirm('سيتم حفظ البيانات القديمة في مفتاح منفصل ثم بدء التطبيق ببيانات فارغة. هل أنت متأكد؟'))return;try{const backupKey=K+'_recovery_'+Date.now();localStorage.setItem(backupKey,BOOT_RAW);if(localStorage.getItem(backupKey)!==BOOT_RAW)throw new Error('Recovery backup verification failed');const fresh=DEFAULT_STATE();const freshRaw=JSON.stringify(fresh);localStorage.setItem(K,freshRaw);if(localStorage.getItem(K)!==freshRaw)throw new Error('Fresh state verification failed');S=fresh;LAST_GOOD_RAW=freshRaw;RECOVERY=false;BOOT_ERROR='';BOOT_READ_FAILED=false;BOOT_RAW=freshRaw;BOOT_DATA=fresh;render();toast('تم حفظ نسخة البيانات القديمة وبدء التطبيق')}catch(x){alert('لم يتم بدء التطبيق؛ تعذر حفظ النسخة القديمة أو الحالة الجديدة: '+(x.message||x))}}
  return}
  if(RECOVERY)return;if(e.target.id==='sh')return H.cx();const b=e.target.closest('[data-a]');if(b&&H[b.dataset.a])H[b.dataset.a](b.dataset.i,b)});
 document.addEventListener('input',e=>{if(e.target.id==='q'){f.q=e.target.value.toLowerCase();$('#lst').innerHTML=lst()}});
@@ -271,7 +271,7 @@ $('#imp').addEventListener('change',e=>{
    const payload=JSON.stringify(next);
    localStorage.setItem(K,payload);
    if(localStorage.getItem(K)!==payload)throw new Error('Imported data verification failed');
-   S=next;LAST_GOOD_RAW=payload;BOOT_RAW=payload;BOOT_DATA=next;SAVE_FAILED=false;
+   S=next;LAST_GOOD_RAW=payload;BOOT_RAW=payload;BOOT_DATA=next;SAVE_FAILED=false;RECOVERY=false;BOOT_ERROR='';BOOT_READ_FAILED=false;
    committed=true;
 
   }catch(x){
@@ -346,7 +346,7 @@ function bootState(){
  if(BOOT_RAW===null){BOOT_ERROR='لم يتم العثور على سجل البيانات المحلي. قد يكون هذا تثبيتًا جديدًا أو أن مساحة التخزين القديمة غير متاحة؛ لن ننشئ بيانات فارغة تلقائيًا.';RECOVERY=true;return}
  const firstError=vld(BOOT_DATA);if(firstError){BOOT_ERROR=firstError;RECOVERY=true;return}
  try{const candidate=JSON.parse(JSON.stringify(BOOT_DATA));Object.assign(candidate,DEFAULT_STATE(),candidate);mig(candidate);const secondError=vld(candidate);if(secondError){BOOT_ERROR=secondError;RECOVERY=true;return}S=candidate;
-  const migrated=JSON.stringify(candidate);LAST_GOOD_RAW=BOOT_RAW;if(migrated!==BOOT_RAW){try{localStorage.setItem(K,migrated);BOOT_RAW=migrated;LAST_GOOD_RAW=migrated}catch(e){BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);RECOVERY=true}}
+  const migrated=JSON.stringify(candidate);LAST_GOOD_RAW=BOOT_RAW;if(migrated!==BOOT_RAW){try{localStorage.setItem(K,migrated);if(localStorage.getItem(K)!==migrated)throw new Error('Migration storage verification failed');BOOT_RAW=migrated;LAST_GOOD_RAW=migrated}catch(e){BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);RECOVERY=true}}
  }catch(e){BOOT_ERROR='تعذر ترحيل البيانات بأمان: '+(e&&e.message||e);RECOVERY=true}
 }
 bootState();

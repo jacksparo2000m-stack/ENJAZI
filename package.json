@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build:native": "esbuild src/native.js --bundle --format=iife --minify --outfile=www/native.js",
-    "test": "node --test tests/*.test.cjs",
-    "check": "node --check src/native.js && npm test"
+    "test": "node tools/run-tests.cjs",
+    "check": "node --check src/native.js && node --check sw.js && node --check tools/run-tests.cjs && npm test"
   }
 }
