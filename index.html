@@ -43,14 +43,14 @@ nav button{flex:1;padding:10px;display:flex;flex-direction:column;align-items:ce
 const $=s=>document.querySelector(s),K='pt2',uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),p2=n=>String(n).padStart(2,'0');
 const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
 const DEFAULT_STATE=()=>({lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[]});
-let S=DEFAULT_STATE(),BOOT_RAW=null,BOOT_DATA=null,BOOT_ERROR='',RECOVERY=false,SAVE_FAILED=false,LAST_GOOD_RAW=null;
-try{BOOT_RAW=localStorage.getItem(K);if(BOOT_RAW!==null)BOOT_DATA=JSON.parse(BOOT_RAW)}catch(e){BOOT_ERROR=String(e&&e.message||e||'Storage read failed');RECOVERY=true}
+let S=DEFAULT_STATE(),BOOT_RAW=null,BOOT_DATA=null,BOOT_ERROR='',BOOT_READ_FAILED=false,RECOVERY=false,SAVE_FAILED=false,LAST_GOOD_RAW=null;
+try{BOOT_RAW=localStorage.getItem(K);if(BOOT_RAW!==null)BOOT_DATA=JSON.parse(BOOT_RAW)}catch(e){BOOT_READ_FAILED=true;BOOT_ERROR=String(e&&e.message||e||'Storage read failed');RECOVERY=true}
 if(!RECOVERY&&BOOT_DATA&&typeof BOOT_DATA==='object'&&!Array.isArray(BOOT_DATA))S=Object.assign(DEFAULT_STATE(),BOOT_DATA);
 let v='todo',f={tab:'all',cat:'',q:'',open:0},D=null,P={g:null,i:null},ip=null;
 const MAX_TASKS=10000,MAX_GROUPS=500,MAX_ITEMS=5000,MAX_LECTURES=50000,MAX_SUBTASKS=50000;
 const mig=(s)=>{let generated=0;
  if(!s||!Array.isArray(s.tasks)||!Array.isArray(s.groups))throw new Error('Invalid state shape');
- s.tasks.forEach(x=>{if(!Array.isArray(x.rms))x.rms=Number.isSafeInteger(x.rm)&&x.rm>=0?[x.rm]:[]});
+ s.tasks.forEach(x=>{if(!Array.isArray(x.rms))x.rms=Number.isSafeInteger(x.rm)&&x.rm>=0?[x.rm]:[];if(!Array.isArray(x.sub))x.sub=[];if(!Array.isArray(x.fr))x.fr=[]});
  s.groups.forEach(g=>{if(!g||!Array.isArray(g.it))throw new Error('Invalid section');
   g.it.forEach(i=>{if(!Array.isArray(i.ls)){const n=Number.isSafeInteger(i.done)&&i.done>=0?i.done:0;if(n>5000||generated+n>MAX_LECTURES)throw new Error('Legacy lecture count exceeds safe migration limit');generated+=n;i.ls=[];for(let k=1;k<=n;k++)i.ls.push({id:uid(),n:'محاضرة '+k,at:i.last||Date.now()})}
    i.ls.forEach(l=>{if(!l.id)l.id=uid();if(!Number.isFinite(l.at))l.at=Date.now()});
@@ -59,7 +59,7 @@ const mig=(s)=>{let generated=0;
  return s;
 };
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e});
-const save=()=>{if(RECOVERY)return false;let ok=false;try{const payload=JSON.stringify(S);localStorage.setItem(K,payload);ok=true;SAVE_FAILED=false;LAST_GOOD_RAW=payload}catch(e){SAVE_FAILED=true;console.error('ENJAZI save failed:',e);if(typeof toast==='function')toast(T('فشل حفظ البيانات! لم يتم تأكيد التغيير. تحقق من مساحة التخزين.','Save failed. The change was not confirmed; check available storage.'))}clearTimeout(save.t);save.t=ok?setTimeout(()=>window.sched&&sched(),300):null;return ok},T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
+const save=(scheduleNotifications=true)=>{if(RECOVERY)return false;let ok=false;try{const payload=JSON.stringify(S);localStorage.setItem(K,payload);if(localStorage.getItem(K)!==payload)throw new Error('Storage verification failed');ok=true;SAVE_FAILED=false;LAST_GOOD_RAW=payload}catch(e){SAVE_FAILED=true;console.error('ENJAZI save failed:',e);if(typeof toast==='function')toast(T('فشل حفظ البيانات! لم يتم تأكيد التغيير. تحقق من مساحة التخزين.','Save failed. The change was not confirmed; check available storage.'))}clearTimeout(save.t);save.t=ok&&scheduleNotifications?setTimeout(()=>window.sched&&sched(),300):null;return ok},T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
 const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const due=x=>x.d?new Date(x.d+'T'+(x.tm||'23:59')):null,od=x=>!x.x&&due(x)&&due(x)<new Date();
 const pct=(a,b)=>b?Math.round(a/b*100):0,bar=p=>`<div class="bar"><i style="width:${p}%"></i></div>`;
@@ -67,7 +67,7 @@ const fdt=(d,tm)=>d?new Date(d+'T00:00').toLocaleDateString(loc(),{day:'numeric'
 const t12=tm=>{if(!tm)return'--:--';const[h,m]=tm.split(':').map(Number);return(h%12||12)+':'+p2(m)+' '+(h>=12?T('م','PM'):T('ص','AM'))},nk=s=>String(s??'').replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)),num=s=>parseInt(nk(s))||0,ord=l=>{const m=nk(l.n).match(/\d+/);return m?+m[0]:1e9+l.at/1e3},nx=I=>Math.max(0,...I.ls.map(l=>{const m=nk(l.n).match(/\d+/);return m?+m[0]:0}))+1;
 const toast=m=>{const t=$('#ts');t.textContent=m;t.hidden=0;setTimeout(()=>t.hidden=1,4000)};
 function clock(){const e=$('#clk');if(e)e.textContent=new Date().toLocaleString(loc(),{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}
-function recoveryView(){const raw=BOOT_RAW===null?'':BOOT_RAW;return `<h1>⚠ ${T('حماية البيانات','Data protection')}</h1><div class="card"><b>${T('لم نتمكن من تحميل بياناتك بأمان','Your saved data could not be loaded safely')}</b><p class="mu" style="margin-top:8px">${E(BOOT_ERROR||'تعذر التحقق من بنية البيانات أو ترحيلها.')}</p><p style="margin-top:10px">${T('التطبيق متوقف مؤقتًا عن التعديل حتى لا يستبدل بياناتك ببيانات فارغة. صدّر النسخة الخام أولًا، أو أعد المحاولة.','Editing is paused so the app cannot overwrite your data with an empty state. Export the raw data first, or retry.')}</p></div><button class="btn w" data-recovery="export" ${raw?'':'disabled'}>${T('تصدير البيانات الخام','Export raw data')}</button><button class="btn o w" data-recovery="import">${T('استيراد نسخة احتياطية سليمة','Import a valid backup')}</button><button class="btn o w" data-recovery="retry">${T('إعادة المحاولة','Retry')}</button>${BOOT_RAW!==null?`<button class="btn o w" data-recovery="reset">${T('بدء جديد بعد حفظ نسخة من البيانات القديمة','Start fresh after preserving old data')}</button>`:''}`;}
+function recoveryView(){const raw=BOOT_RAW===null?'':BOOT_RAW;return `<h1>⚠ ${T('حماية البيانات','Data protection')}</h1><div class="card"><b>${T('لم نتمكن من تحميل بياناتك بأمان','Your saved data could not be loaded safely')}</b><p class="mu" style="margin-top:8px">${E(BOOT_ERROR||'تعذر التحقق من بنية البيانات أو ترحيلها.')}</p><p style="margin-top:10px">${T('التطبيق متوقف مؤقتًا عن التعديل حتى لا يستبدل بياناتك ببيانات فارغة. صدّر النسخة الخام أولًا، أو أعد المحاولة.','Editing is paused so the app cannot overwrite your data with an empty state. Export the raw data first, or retry.')}</p></div><button class="btn w" data-recovery="export" ${raw?'':'disabled'}>${T('تصدير البيانات الخام','Export raw data')}</button><button class="btn o w" data-recovery="import">${T('استيراد نسخة احتياطية سليمة','Import a valid backup')}</button><button class="btn o w" data-recovery="retry">${T('إعادة المحاولة','Retry')}</button>${BOOT_RAW!==null?`<button class="btn o w" data-recovery="reset">${T('بدء جديد بعد حفظ نسخة من البيانات القديمة','Start fresh after preserving old data')}</button>`:`<button class="btn w" data-recovery="start" ${BOOT_READ_FAILED?'disabled':''}>${T('بدء استخدام جديد (لا توجد بيانات محلية مقروءة)','Start fresh (no readable local data)')}</button>`}`;}
 function render(){const h=document.documentElement;h.lang=S.lang;h.dir=S.lang==='ar'?'rtl':'ltr';h.dataset.th=S.th;h.dataset.fs=S.fs;
 if(RECOVERY){$('#app').innerHTML=recoveryView();$('#fab').hidden=true;$('#nav').hidden=true;$('#nav').innerHTML='';$('#sh').hidden=true;return}
 $('#nav').hidden=false;$('#app').innerHTML=v==='todo'?todo():v==='track'?track():sets();$('#fab').hidden=v!=='todo';
@@ -117,11 +117,11 @@ $('#sh').innerHTML=`<div class="bx"><h2>${S.tasks.some(x=>x.id===d.id)?T('تعد
 ${lk.length?`<label>${T('اربطها بمادة في جدول الإنجاز','Link to a progress item')}</label><select id="fl">${op([['',T('بدون','None')],...lk],d.lk)}</select>`:''}
 <div class="two" style="margin-top:16px"><button class="btn o" data-a="cx">${T('إلغاء','Cancel')}</button><button class="btn" data-a="sv">${T('حفظ','Save')}</button></div></div>`;$('#sh').hidden=0;wset()}
 const lkd=(x,dl)=>{if(!x.lk)return;const[g,i]=x.lk.split(':'),t=(S.groups.find(a=>a.id===g)||{it:[]}).it.find(a=>a.id===i);if(!t)return;const id='t'+x.id;t.ls=t.ls.filter(l=>l.id!==id);if(dl>0)t.ls.push({id,n:x.t,at:Date.now()})};
-const nd=(d,r)=>{const t=new Date(d+'T00:00');r==='d'?t.setDate(t.getDate()+1):r==='w'?t.setDate(t.getDate()+7):r==='m'?t.setMonth(t.getMonth()+1):t.setFullYear(t.getFullYear()+1);return iso(t)};
+const nd=(d,r)=>{const [yy,mm,dd]=d.split('-').map(Number),t=new Date(yy,mm-1,dd,12);if(r==='d')t.setDate(t.getDate()+1);else if(r==='w')t.setDate(t.getDate()+7);else{const y=t.getFullYear()+(r==='y'?1:0),m=t.getMonth()+(r==='m'?1:0),last=new Date(y,m+1,0).getDate();t.setFullYear(y,m,Math.min(dd,last))}return iso(t)};
 const pr=(m,def)=>{const r=prompt(m,def);return r&&r.trim()?r.trim():null},it2=i=>{const[g,k]=i.split('|'),G=S.groups.find(a=>a.id===g);return[G,G.it.find(a=>a.id===k)]},up=()=>{if(save())render();else{if(LAST_GOOD_RAW!==null){try{S=JSON.parse(LAST_GOOD_RAW)}catch(e){}}render()}};
  const unlinkItems=(groupId,items)=>{const keys=new Set(items.map(i=>groupId+':'+i.id));S.tasks.forEach(x=>{if(x.lk&&keys.has(x.lk))x.lk='';});};
 const H={nv:i=>{v=i;render()},tb:i=>{f.tab=i;render()},fc:i=>{f.cat=i;render()},co:()=>{f.open=!f.open;$('#lst').innerHTML=lst()},add:()=>openSheet(),ed:i=>openSheet(i),
-tg:i=>{const x=S.tasks.find(a=>a.id===i);x.x=x.x?0:Date.now();lkd(x,x.x?1:-1);if(x.x&&x.rp&&x.d)S.tasks.push({...x,id:uid(),x:0,fr:[],d:nd(x.d,x.rp),sub:(x.sub||[]).map(s=>({...s,x:0}))});up();pins()},
+tg:i=>{const x=S.tasks.find(a=>a.id===i);x.x=x.x?0:Date.now();lkd(x,x.x?1:-1);if(x.x&&x.rp&&x.d&&!S.tasks.some(a=>a.rf===x.id))S.tasks.push({...x,id:uid(),rf:x.id,x:0,fr:[],d:nd(x.d,x.rp),sub:(x.sub||[]).map(s=>({...s,x:0}))});up();pins()},
 del:i=>{if(confirm(T('حذف المهمة؟','Delete task?'))){const x=S.tasks.find(a=>a.id===i);if(x&&x.x)lkd(x,-1);S.tasks=S.tasks.filter(x=>x.id!==i);up();pins()}},
 clr:()=>{if(confirm(T('مسح كل المهام المنجزة؟','Clear all completed tasks?'))){S.tasks.filter(x=>x.x).forEach(x=>lkd(x,-1));S.tasks=S.tasks.filter(x=>!x.x);up()}},
 qd:i=>{sync();const t=new Date();t.setDate(t.getDate()+ +i);D.d=iso(t);draw()},pr:i=>{sync();D.p=+i;draw()},cc:i=>{sync();D.c=i;draw()},
@@ -155,6 +155,7 @@ document.addEventListener('click',e=>{const rb=e.target.closest('[data-recovery]
  if(a==='export'&&BOOT_RAW!==null){try{const blob=new Blob([BOOT_RAW],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),el=document.createElement('a');el.href=url;el.download='enjazi-raw-recovery-'+Date.now()+'.json';document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}catch(x){alert('تعذر تصدير البيانات الخام: '+(x.message||x))}}
  if(a==='import')$('#imp').click();
  if(a==='retry')location.reload();
+ if(a==='start'&&BOOT_RAW===null&&!BOOT_READ_FAILED){if(!confirm('لم يتم العثور على بيانات محلية قابلة للقراءة. هل أنت متأكد أن هذه بداية استخدام جديدة؟'))return;try{const fresh=DEFAULT_STATE(),raw=JSON.stringify(fresh);localStorage.setItem(K,raw);if(localStorage.getItem(K)!==raw)throw new Error('Storage verification failed');S=fresh;LAST_GOOD_RAW=raw;BOOT_RAW=raw;BOOT_DATA=fresh;RECOVERY=false;BOOT_ERROR='';render();if(LN)initN();toast('تم بدء التطبيق بحالة جديدة')}catch(x){alert('تعذر بدء التطبيق بأمان: '+(x.message||x))}}
  if(a==='reset'&&BOOT_RAW!==null){if(!confirm('سيتم حفظ البيانات القديمة في مفتاح منفصل ثم بدء التطبيق ببيانات فارغة. هل أنت متأكد؟'))return;try{localStorage.setItem(K+'_recovery_'+Date.now(),BOOT_RAW);const fresh=DEFAULT_STATE();const freshRaw=JSON.stringify(fresh);localStorage.setItem(K,freshRaw);S=fresh;LAST_GOOD_RAW=freshRaw;RECOVERY=false;BOOT_ERROR='';BOOT_RAW=JSON.stringify(fresh);render();toast('تم حفظ نسخة البيانات القديمة وبدء التطبيق')}catch(x){alert('لم يتم بدء التطبيق؛ تعذر حفظ النسخة القديمة أو الحالة الجديدة: '+(x.message||x))}}
  return}
  if(RECOVERY)return;if(e.target.id==='sh')return H.cx();const b=e.target.closest('[data-a]');if(b&&H[b.dataset.a])H[b.dataset.a](b.dataset.i,b)});
@@ -167,7 +168,7 @@ const stamp=v=>N(v)&&Math.abs(v)<=8640000000000000;
 const date=v=>{if(!B(v,'string')||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split('-').map(Number),x=new Date(Date.UTC(y,m-1,d));return x.getUTCFullYear()===y&&x.getUTCMonth()===m-1&&x.getUTCDate()===d};
 const time=v=>B(v,'string')&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 const ids=new Set(),addId=(v)=>{if(!text(v,256)||!v.trim()||ids.has(v))return false;ids.add(v);return true};
-if(!R(o)||(o.tasks===undefined&&o.groups===undefined))return T('هذا الملف ليس نسخة احتياطية من إنجازي','This is not an Enjazi backup file');
+if(!R(o)||!AR(o.tasks)||!AR(o.groups))return T('النسخة الاحتياطية غير مكتملة: يجب أن تحتوي على المهام والأقسام معًا','Incomplete backup: both tasks and sections arrays are required');
 if((has(o.tasks)&&!AR(o.tasks))||(has(o.groups)&&!AR(o.groups))||(has(o.cats)&&!(AR(o.cats)&&o.cats.length<=1000&&o.cats.every(c=>text(c,200)))))return W('بنية الأقسام أو المهام','tasks/sections structure');
 if((o.tasks||[]).length>MAX_TASKS||(o.groups||[]).length>MAX_GROUPS)return W('عدد المهام أو الأقسام أكبر من الحد الآمن','task or section count exceeds safe limits');
 let totalItems=0,totalLectures=0,totalSubs=0;
@@ -190,6 +191,7 @@ for(const [i,x] of (o.tasks||[]).entries()){
  if(has(x.x)&&!(B(x.x,'boolean')||(N(x.x)&&x.x>=0&&stamp(x.x))))return err('حالة الإنجاز','completion state');
  if(has(x.fired)&&!(B(x.fired,'boolean')||(N(x.fired)&&[0,1].includes(x.fired))))return err('حالة التذكير','reminder state');
  if(has(x.lk)&&!text(x.lk,600))return err('ربط المادة','linked item');
+ if(has(x.rf)&&!text(x.rf,256))return err('مصدر المهمة المتكررة','recurrence source');
  if(has(x.sub)&&!(AR(x.sub)&&x.sub.length<=1000&&x.sub.every(a=>R(a)&&text(a.t,1000)&&(!has(a.x)||B(a.x,'boolean')||a.x===0||a.x===1))))return err('المهام الفرعية','subtasks');
   totalSubs+=(x.sub||[]).length;if(totalSubs>MAX_SUBTASKS)return W('عدد المهام الفرعية أكبر من الحد الآمن','subtask count exceeds safe limit');
 }
@@ -254,6 +256,8 @@ $('#imp').addEventListener('change',e=>{
    clearTimeout(save.t);
    save.t=null;
 
+   const currentRaw=localStorage.getItem(K);
+   if(currentRaw!==null){const backupKey=K+'_preimport_'+Date.now();localStorage.setItem(backupKey,currentRaw);if(localStorage.getItem(backupKey)!==currentRaw)throw new Error('Pre-import backup verification failed')}
    const imported=JSON.parse(JSON.stringify(o));
    const next=Object.assign({
     lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[]
@@ -266,8 +270,8 @@ $('#imp').addEventListener('change',e=>{
 
    const payload=JSON.stringify(next);
    localStorage.setItem(K,payload);
-
-   S=next;
+   if(localStorage.getItem(K)!==payload)throw new Error('Imported data verification failed');
+   S=next;LAST_GOOD_RAW=payload;BOOT_RAW=payload;BOOT_DATA=next;SAVE_FAILED=false;
    committed=true;
 
   }catch(x){
@@ -324,7 +328,7 @@ if(d)(x.rms||[]).forEach(r=>{const at=d-r*6e4;if(at>now)N.push({id:hid(x.id+'|'+
 if(x.sn>now)N.push({id:hid(x.id+'|s'),title:'⏰ '+x.t,body:T('تذكير مؤجَّل','Snoozed reminder'),channelId:'rem',actionTypeId:'task',extra:ex,schedule:{at:new Date(x.sn),allowWhileIdle:true}});
 if(x.pin&&x.p>=2){const i=hid('p'+x.id);want.add(i);N.push({id:i,title:x.t,body:(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),channelId:'pin',ongoing:true,autoCancel:false,actionTypeId:'task',extra:ex})}});
 want.forEach(i=>gone.delete(i));
-const oldPin=S.pin;S.pin=[...want];try{const saved=JSON.stringify(S);localStorage.setItem(K,saved);LAST_GOOD_RAW=saved;SAVE_FAILED=false}catch(e){S.pin=oldPin;SAVE_FAILED=true;console.error('ENJAZI notification state save failed:',e);return}
+const oldPin=S.pin;S.pin=[...want];if(!save(false)){S.pin=oldPin;return}
 const pd=await LN.getPending();if(pd.notifications.length)await LN.cancel({notifications:pd.notifications});
 if(gone.size)await LN.removeDeliveredNotifications({notifications:[...gone].map(id=>({id}))});
 if(N.length)await LN.schedule({notifications:N})}catch(e){console.error('ENJAZI notification scheduling failed:',e)}}
@@ -332,14 +336,14 @@ async function initN(){if(!LN||RECOVERY)return;try{await LN.requestPermissions()
 await LN.registerActionTypes({types:[{id:'task',actions:[{id:'snooze',title:T('تأجيل 10 د','Snooze 10m')},{id:'done',title:T('تم ✓','Done ✓')}]}]});
 LN.addListener('localNotificationActionPerformed',e=>{const x=S.tasks.find(a=>a.id===(e.notification.extra||{}).tid);if(!x)return;if(e.actionId==='done'&&!x.x)H.tg(x.id);else if(e.actionId==='snooze'){const old=x.sn;x.sn=Date.now()+6e5;if(save())toast(T('تم التأجيل 10 دقائق','Snoozed 10 min'));else if(old===undefined)delete x.sn;else x.sn=old}});sched()}catch(e){}}
 const gr=()=>'Notification'in window&&Notification.permission==='granted';
-async function ntf(ti,bo,tag,pin){if(!gr())return false;try{const r=await navigator.serviceWorker.ready;await r.showNotification(ti,{body:bo,tag,icon:'icon-192.png',requireInteraction:pin,silent:pin,data:{pin,title:ti,body:bo}});return true}catch(e){return false}}
+async function ntf(ti,bo,tag,pin,taskId){if(!gr())return false;try{const r=await navigator.serviceWorker.ready;await r.showNotification(ti,{body:bo,tag,icon:'icon-192.png',requireInteraction:pin,silent:pin,data:{pin,title:ti,body:bo,taskId:taskId||null}});return true}catch(e){return false}}
 async function pins(){if(RECOVERY||!gr())return;try{const r=await navigator.serviceWorker.ready,w=S.tasks.filter(x=>!x.x&&x.pin&&x.p>=2),cur=await r.getNotifications(),tg=new Set(w.map(x=>'pin-'+x.id));
 cur.forEach(n=>{if(n.tag.startsWith('pin-')&&!tg.has(n.tag))n.close()});const have=new Set(cur.map(n=>n.tag));
-w.forEach(x=>{if(!have.has('pin-'+x.id))ntf(x.t,(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),'pin-'+x.id,true)})}catch(e){}}
+w.forEach(x=>{if(!have.has('pin-'+x.id))ntf(x.t,(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),'pin-'+x.id,true,x.id)})}catch(e){}}
 function tick(){if(LN||RECOVERY)return;const n=Date.now();S.tasks.forEach(x=>{const d=due(x);if(x.x||!d)return;x.fr=x.fr||[];(x.rms||[]).forEach(r=>{if(!x.fr.includes(r)&&n>=d-r*6e4&&n<d+864e5){x.fr.push(r);if(!save()){x.fr.pop();return}ntf(x.t,r?T('بعد ','In ')+rl(r):T('حان موعد المهمة','Task is due'),'rm-'+x.id+r,false).then(ok=>ok||toast('🔔 '+x.t))}})})}
 function bootState(){
  if(BOOT_ERROR){RECOVERY=true;return}
- if(BOOT_RAW===null){S=DEFAULT_STATE();return}
+ if(BOOT_RAW===null){BOOT_ERROR='لم يتم العثور على سجل البيانات المحلي. قد يكون هذا تثبيتًا جديدًا أو أن مساحة التخزين القديمة غير متاحة؛ لن ننشئ بيانات فارغة تلقائيًا.';RECOVERY=true;return}
  const firstError=vld(BOOT_DATA);if(firstError){BOOT_ERROR=firstError;RECOVERY=true;return}
  try{const candidate=JSON.parse(JSON.stringify(BOOT_DATA));Object.assign(candidate,DEFAULT_STATE(),candidate);mig(candidate);const secondError=vld(candidate);if(secondError){BOOT_ERROR=secondError;RECOVERY=true;return}S=candidate;
   const migrated=JSON.stringify(candidate);LAST_GOOD_RAW=BOOT_RAW;if(migrated!==BOOT_RAW){try{localStorage.setItem(K,migrated);BOOT_RAW=migrated;LAST_GOOD_RAW=migrated}catch(e){BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);RECOVERY=true}}
@@ -349,5 +353,5 @@ bootState();
 if(!CAP&&'serviceWorker'in navigator&&!RECOVERY)navigator.serviceWorker.register('sw.js').then(()=>pins()).catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!RECOVERY){tick();pins();sched();render()}});
 setInterval(()=>{if(RECOVERY)return;tick();clock();if(v==='todo'&&$('#lst')&&$('#sh').hidden&&document.activeElement.tagName!=='INPUT')$('#lst').innerHTML=lst()},20000);
-render();if(!RECOVERY){tick();initN();}
+render();if(!RECOVERY){tick();initN();const launchTaskId=new URLSearchParams(location.search).get('taskId');if(launchTaskId){const launchTask=S.tasks.find(x=>x.id===launchTaskId);if(launchTask)openSheet(launchTaskId);else toast(T('المهمة المرتبطة بالإشعار غير موجودة','The task linked to this notification was not found'))}}
 </script></body></html>
