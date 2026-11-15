@@ -11,7 +11,10 @@ public class PersistentTasksPlugin extends Plugin {
     @PluginMethod
     public void sync(PluginCall call) {
         JSONArray notifications = call.getData().optJSONArray("notifications");
-        if (notifications == null) notifications = new JSONArray();
+        if (notifications == null) {
+            call.reject("Missing notifications array; refusing to clear saved notices");
+            return;
+        }
         if (!PersistentTaskNotifications.sync(getContext(), notifications)) {
             call.reject("Could not save persistent task notifications");
             return;
@@ -22,7 +25,10 @@ public class PersistentTasksPlugin extends Plugin {
     @PluginMethod
     public void cancel(PluginCall call) {
         JSONArray ids = call.getData().optJSONArray("ids");
-        if (ids == null) ids = new JSONArray();
+        if (ids == null) {
+            call.reject("Missing notification IDs");
+            return;
+        }
         if (!PersistentTaskNotifications.cancel(getContext(), ids)) {
             call.reject("Could not update persistent task notification storage");
             return;
