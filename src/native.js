@@ -21,8 +21,13 @@ function notificationId(value) {
 async function syncPersistentTasksFromStorage() {
   try {
     const raw = window.localStorage.getItem(TASKS_STORAGE_KEY);
-    const state = raw === null ? { tasks: [], lang: 'ar' } : JSON.parse(raw);
-    if (!state || !Array.isArray(state.tasks)) throw new Error('Invalid saved task state');
+    // Missing storage is ambiguous (new install, changed WebView origin, or
+    // unavailable old data). Never interpret it as an empty task list.
+    if (raw === null) return null;
+    const state = JSON.parse(raw);
+    if (!state || !Array.isArray(state.tasks) || !Array.isArray(state.groups)) {
+      throw new Error('Invalid or incomplete saved task state');
+    }
     const ar = state.lang !== 'en';
     const notifications = state.tasks
       .filter(task => task && !task.x && Number(task.p) >= 2)
