@@ -58,6 +58,7 @@ jobs:
           mkdir -p www
           cp index.html manifest.json sw.js icon-192.png icon-512.png www/
           npm install --no-audit --no-fund
+          npm run check
           npm run build:native
           npx cap add android
           npx cap sync android
