@@ -81,6 +81,17 @@ test('notepad save calculates projected limits correctly for create and edit', (
   assert.match(html, /projectedCount>50000\|\|projectedTotal>500000/);
 });
 
+test('notepad deletion requires confirmation and saves safely', () => {
+  assert.match(html, /data-a="ndel"/);
+  assert.match(html, /ndel:async\(\)=>/);
+  assert.match(html, /if\(!confirm\(T\(/);
+  assert.match(html, /S\.notes\.find\(n=>n\.id===ND\.id\)/);
+  assert.match(html, /S\.notes\.findIndex\(n=>n\.id===ND\.id\)/);
+  assert.match(html, /S\.notes\.splice\(index,1\)/);
+  assert.match(html, /const ok=await save\(false\)/);
+  assert.match(html, /if\(ok\)\{[\s\S]*ND=null;[\s\S]*render\(\)/);
+});
+
 test('notepad cards open existing notes for editing', () => {
   assert.match(html, /function editNoteSheet\(id\)/);
   assert.match(html, /const note=S\.notes\.find\(n=>n\.id===id\)/);
