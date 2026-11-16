@@ -60,8 +60,8 @@ test('notes are validated with stable IDs and optional subject links', () => {
   assert.match(html, /if\(\(o\.notes\|\|\[\]\)\.length>MAX_NOTES\)/);
   assert.match(html, /for\(const \[i,n\] of \(o\.notes\|\|\[\]\)\.entries\(\)\)/);
   assert.match(html, /!addId\(n\.id\)/);
-  assert.match(html, /text\(n\.title,500\)&&n\.title\.trim\(\)/);
-  assert.match(html, /text\(n\.content,100000\)/);
+  assert.match(html, /!text\(n\.title,500\)\|\|!n\.title\.trim\(\)/);
+assert.match(html, /!text\(n\.content,100000\)/);
   assert.match(html, /stamp\(n\.createdAt\)/);
   assert.match(html, /stamp\(n\.updatedAt\)/);
   assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
