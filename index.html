@@ -345,6 +345,25 @@ add('saved groups',Array.isArray(data.groups)?data.groups.length:'invalid');
 }
 }catch(e){add('localStorage','ERROR: '+(e.message||e))}
 
+try{
+ const events=await auditList();
+ add('WRITE AUDIT database','readable');
+ add('WRITE AUDIT events',events.length);
+
+ events.slice(0,30).forEach((event,index)=>{
+  const prefix='AUDIT '+(index+1);
+  add(prefix+' time',new Date(event.at).toLocaleString());
+  add(prefix+' operation',event.type);
+  add(prefix+' tasks',event.beforeTasks+' → '+event.afterTasks);
+  add(prefix+' length',event.beforeLength+' → '+event.afterLength);
+  add(prefix+' hash',event.beforeHash+' → '+event.afterHash);
+  if(event.error)add(prefix+' error',event.error);
+  if(event.stack)add(prefix+' stack',event.stack);
+ });
+}catch(e){
+ add('WRITE AUDIT database','ERROR: '+(e.message||e));
+}
+
 add('in-memory tasks',Array.isArray(S.tasks)?S.tasks.length:'unavailable');
 add('app mode',CAP?'Capacitor/native':'browser/PWA');
 add('origin',location.origin);
