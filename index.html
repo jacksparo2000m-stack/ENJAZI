@@ -170,7 +170,7 @@ let S=DEFAULT_STATE(),BOOT_RAW=null,BOOT_DATA=null,BOOT_ERROR='',BOOT_READ_FAILE
 try{BOOT_RAW=localStorage.getItem(K);if(BOOT_RAW!==null)BOOT_DATA=JSON.parse(BOOT_RAW)}catch(e){BOOT_READ_FAILED=true;BOOT_ERROR=String(e&&e.message||e||'Storage read failed');RECOVERY=true}
 if(!RECOVERY&&BOOT_DATA&&typeof BOOT_DATA==='object'&&!Array.isArray(BOOT_DATA))S=Object.assign(DEFAULT_STATE(),BOOT_DATA);
 let v='todo',f={tab:'all',cat:'',subjectId:'',q:'',open:0},D=null,P={g:null,i:null},ip=null;
-const MAX_TASKS=10000,MAX_GROUPS=500,MAX_ITEMS=5000,MAX_LECTURES=50000,MAX_SUBTASKS=50000,MAX_NOTES=50000;
+const MAX_TASKS=10000,MAX_GROUPS=500,MAX_ITEMS=5000,MAX_LECTURES=50000,MAX_SUBTASKS=50000,MAX_NOTES=50000,MAX_NOTE_LENGTH=100000,MAX_NOTE_CONTENT=500000;
 const askTotal=(message,initial='')=>{const raw=prompt(message,initial);if(raw===null)return null;const value=nk(raw.trim());if(value==='')return 0;if(!/^\d+$/.test(value)){toast(T('اكتب عددًا صحيحًا أو اترك الحقل فارغًا','Enter a whole number or leave it empty'));return null}const n=Number(value);if(!Number.isSafeInteger(n)||n<0||n>1000000){toast(T('العدد يجب أن يكون بين 0 و1,000,000','The value must be between 0 and 1,000,000'));return null}return n};
 const mig=(s)=>{let generated=0;
  if(!s||!Array.isArray(s.tasks)||!Array.isArray(s.groups))throw new Error('Invalid state shape');
