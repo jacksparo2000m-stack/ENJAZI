@@ -95,6 +95,26 @@ test('notepad navigation renders the notes page and escapes note titles', () => 
   assert.match(html, /nv:i=>\{v=i;render\(\)\}/);
 });
 
+test('notepad create and cancel handlers preserve safe save behavior', () => {
+  // New note button opens the note form.
+  assert.match(html, /nn: *\(\)=>openNoteSheet\(\)/);
+
+  // Cancel closes the form without saving.
+  assert.match(html, /nclose: *\(\)=>\{ND=null;\$\('#sh'\)\.hidden=1\}/);
+
+  // Saving validates the title and content limits.
+  assert.match(html, /if\(!title\)return toast/);
+  assert.match(html, /title\.length>500\|\|content\.length>100000/);
+
+  // Saving respects the total notes limits.
+  assert.match(html, /S\.notes\.length>=50000/);
+  assert.match(html, /S\.notes\.push\(note\)/);
+
+  // The form closes only after confirmed save success.
+  assert.match(html, /const ok=await save\(\)/);
+  assert.match(html, /if\(ok\)\{[\s\S]*ND=null;[\s\S]*render\(\)/);
+});
+
 test('backup import requires both task and section arrays', () => {
   assert.match(html, /!AR\(o\.tasks\)\|\|!AR\(o\.groups\)/);
 });
