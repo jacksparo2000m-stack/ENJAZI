@@ -262,7 +262,7 @@ $('#nav').innerHTML=[['todo','✓',T('المهام','Tasks')],['track','▤',T('
  return '';
 };
  const card=x=>{const s=x.sub||[],sd=s.filter(a=>a.x).length;return `<div class="task${x.x?' dn':''}"><button class="ck p${x.p}" data-a="tg" data-i="${x.id}">${x.x?'✓':''}</button><div class="bd" data-a="ed" data-i="${x.id}"><b>${E(x.t)}</b>${x.n?`<p>${E(x.n)}</p>`:''}<div class="mt">${x.c?`<span class="tag">${E(x.c)}</span>`:''}${x.subjectId&&subjectName(x.subjectId)?`<span class="tag">📚 ${E(subjectName(x.subjectId))}</span>`:''}${x.d?`<span class="${od(x)?'ov':''}">📅 ${fdt(x.d,x.tm)}${x.x?'':' · '+cd(x)}</span>`:''}${(x.rms||[]).length?'<span>🔔</span>':''}${x.rp?'<span>↻</span>':''}${s.length?`<span>☑ ${sd}/${s.length}</span>`:''}${x.lk?'<span>▤</span>':''}</div></div><button class="ic" data-a="del" data-i="${x.id}">✕</button></div>`};
-function lst(){const L=S.tasks.filter(x=>(!f.cat||x.c===f.cat)&&(!f.q||(x.t+' '+(x.n||'')).toLowerCase().includes(f.q)));
+function lst(){const L=S.tasks.filter(x=>(!f.cat||x.c===f.cat)&&(!f.subjectId||x.subjectId===f.subjectId)&&(!f.q||(x.t+' '+(x.n||'')).toLowerCase().includes(f.q)));
 const act=L.filter(x=>!x.x).sort((a,b)=>(+due(a)||9e15)-(+due(b)||9e15)||b.p-a.p),dne=L.filter(x=>x.x),g={};
 (f.tab==='done'?[]:f.tab==='over'?act.filter(od):act).forEach(x=>(g[x.c||T('بدون تصنيف','No category')]??=[]).push(x));
 let h=Object.entries(g).map(([c,a])=>`<h3>${E(c)} <span>${a.length}</span></h3>`+a.map(card).join('')).join('');
