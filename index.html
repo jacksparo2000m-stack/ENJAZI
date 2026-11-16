@@ -282,9 +282,13 @@ function openNoteSheet(){
      ${T('إلغاء','Cancel')}
     </button>
     <button class="btn" data-a="nsave">
-     ${T('حفظ','Save')}
+     ${T('حفظ التعديلات','Save changes')}
     </button>
    </div>
+
+   <button class="btn o w" data-a="ndel" style="margin-top:12px">
+    🗑️ ${T('حذف الملاحظة','Delete note')}
+   </button>
   </div>`;
 
   $('#sh').hidden=0;
