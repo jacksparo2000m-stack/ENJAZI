@@ -108,7 +108,7 @@ function sets(){const n='Notification'in window?Notification.permission:'denied'
 return `<h1>${T('الإعدادات','Settings')}</h1><div class="card"><b>${T('المظهر','Theme')}</b>${seg('th',[['light',T('فاتح','Light')],['dark',T('داكن','Dark')],['sepia',T('مريح للعين','Eye comfort')]])}<b>${T('حجم الخط','Font size')}</b>${seg('fs',[['s',T('صغير','Small')],['m',T('متوسط','Medium')],['l',T('كبير','Large')]])}<b>${T('اللغة','Language')}</b>${seg('lang',[['ar','العربية'],['en','English']])}</div>
 <div class="card"><b>${T('الإشعارات','Notifications')}</b><p class="mu">${T('المهام المهمة جدًا والمتوسطة تظهر في شريط الإشعارات. التنبيهات تعمل بدقة والتطبيق مفتوح أو في الخلفية.','High and medium tasks appear in the notification shade. Reminders fire reliably while the app is open or in the background.')}</p>${LN?`<button class="btn w" data-a="nat">${T('السماح بالتنبيهات الدقيقة','Allow exact alarms')}</button><button class="btn o w" data-a="tst">${T('جرّب إشعار الآن','Send test notification')}</button><p class="mu">${T('وأوقف «توفير الطاقة» للتطبيق من إعدادات التليفون ← البطارية.','Also disable battery optimization for this app in phone settings.')}</p>`:''}${LN?'':`<button class="btn w" data-a="en">${n==='granted'?T('✓ مفعّلة','✓ Enabled'):T('تفعيل الإشعارات','Enable notifications')}</button>`}</div>
 ${CAP?'':`<div class="card"><b>${T('تثبيت على الشاشة الرئيسية','Install on home screen')}</b><button class="btn w" data-a="inst">${T('تثبيت التطبيق','Install app')}</button></div>`}
-<div class="card"><b>${T('نسخة احتياطية','Backup')}</b><div class="two"><button class="btn o" data-a="ex">${T('تصدير','Export')}</button><button class="btn o" data-a="im">${T('استيراد','Import')}</button></div><button class="btn o w" data-a="br">${T('عرض واسترجاع النسخ المحفوظة','View and restore saved versions')}</button><small class="mu">${T('يحتفظ التطبيق بآخر 10 نسخ سليمة محليًا.','The app keeps the latest 10 valid local snapshots.')}</small></div>`}
+<div class="card"><b>${T('تشخيص التخزين','Storage diagnostics')}</b><p class="mu">${T('يفحص حالة سجل المهام والنسخ الاحتياطية دون إظهار محتوى مهامك أو تغييره.','Checks task storage and backups without showing or changing task contents.')}</p><button class="btn o w" data-a="diag">${T('فحص التخزين الآن','Check storage now')}</button><pre id="diagout" hidden style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;direction:ltr;text-align:left;margin-top:10px"></pre></div><div class="card"><b>${T('نسخة احتياطية','Backup')}</b><div class="two"><button class="btn o" data-a="ex">${T('تصدير','Export')}</button><button class="btn o" data-a="im">${T('استيراد','Import')}</button></div><button class="btn o w" data-a="br">${T('عرض واسترجاع النسخ المحفوظة','View and restore saved versions')}</button><small class="mu">${T('يحتفظ التطبيق بآخر 10 نسخ سليمة محليًا.','The app keeps the latest 10 valid local snapshots.')}</small></div>`}
 function openSheet(id){D=id?JSON.parse(JSON.stringify(S.tasks.find(x=>x.id===id))):{id:uid(),t:'',n:'',d:'',tm:'',rms:[],rp:'',p:2,c:'',pin:true,sub:[],lk:'',x:0};draw()}
 function sync(){if(!D)return;[['t','ft'],['n','fn'],['d','fd'],['tm','ftm'],['c','fc'],['lk','fl']].forEach(([k,i])=>{const e=$('#'+i);if(e)D[k]=e.value});D.rp=$('#frp').value;D.pin=$('#fpin').checked}
 function draw(){const d=D,cats=[...new Set([...S.cats,...S.tasks.map(x=>x.c).filter(Boolean)])],ad=n=>{const t=new Date();t.setDate(t.getDate()+n);return iso(t)};
@@ -150,7 +150,60 @@ di:()=>{if(confirm(T('حذف المادة؟','Delete?'))){const G=S.groups.find(
 rmt:i=>{sync();const r=+i;D.rms=D.rms.includes(r)?D.rms.filter(z=>z!==r):[...D.rms,r];draw()},ct:()=>{sync();D.tm='';draw()},
 qt:i=>{sync();const t=new Date();if(i==='h')t.setHours(t.getHours()+1);else if(i==='n')t.setHours(20,0,0,0);else{t.setDate(t.getDate()+1);t.setHours(9,0,0,0)}D.d=iso(t);D.tm=p2(t.getHours())+':'+p2(t.getMinutes());if(!D.rms.length)D.rms=[0];draw()},
 qa:()=>{const t=nlp($('#qa').value);if(!t)return toast(T('اكتب المهمة','Type a task'));S.tasks.push(t);up().then(ok=>{if(ok)toast('✓ '+t.t+(t.d?' · '+fdt(t.d,t.tm):''))})},
-nat:async()=>{if(!LN)return;try{const p=await LN.requestPermissions();let ex='?';try{let e=await LN.checkExactNotificationSetting();ex=e.exact_alarm;if(ex!=='granted'){e=await LN.changeExactNotificationSetting();ex=e.exact_alarm}}catch(x){ex='n/a'}toast(T('الإشعارات: ','Notifications: ')+p.display+' · '+T('التنبيهات الدقيقة: ','Exact alarms: ')+ex);sched()}catch(x){toast('⚠ '+(x.message||x))}},
+diag:async()=>{
+const el=$('#diagout');
+if(el){el.hidden=false;el.textContent='Checking storage...'}
+const rows=[];
+const add=(k,v)=>rows.push(k+': '+v);
+let raw=null,data=null;
+
+try{
+raw=localStorage.getItem(K);
+add('localStorage available','yes');
+add('pt2 exists',raw===null?'NO':'YES');
+add('pt2 length',raw===null?'—':raw.length+' chars');
+if(raw!==null){
+try{
+data=JSON.parse(raw);
+add('pt2 JSON','valid');
+add('saved tasks',Array.isArray(data.tasks)?data.tasks.length:'invalid');
+add('saved groups',Array.isArray(data.groups)?data.groups.length:'invalid');
+}catch(e){add('pt2 JSON','INVALID: '+(e.message||e))}
+}
+}catch(e){add('localStorage','ERROR: '+(e.message||e))}
+
+add('in-memory tasks',Array.isArray(S.tasks)?S.tasks.length:'unavailable');
+add('app mode',CAP?'Capacitor/native':'browser/PWA');
+add('origin',location.origin);
+add('secure context',String(window.isSecureContext));
+add('IndexedDB available',String('indexedDB'in window));
+
+try{
+const backups=await backupList();
+add('backup database','readable');
+add('backup snapshots',backups.length);
+if(backups.length){
+const latest=backups[0];
+add('latest backup date',new Date(latest.createdAt).toString());
+add('latest backup checksum',latest.checksum===backupHash(latest.raw)?'valid':'INVALID');
+}
+}catch(e){add('backup database','ERROR: '+(e.message||e))}
+
+try{
+if(navigator.storage&&navigator.storage.persisted)
+add('storage persistence granted',String(await navigator.storage.persisted()));
+else add('storage persistence API','not available');
+}catch(e){add('storage persistence API','ERROR: '+(e.message||e))}
+
+add('boot recovery',String(RECOVERY));
+add('save failed flag',String(SAVE_FAILED));
+add('last good raw in memory',LAST_GOOD_RAW===null?'none':LAST_GOOD_RAW.length+' chars');
+
+const report='ENJAZI STORAGE DIAGNOSTICS v1\n'+rows.join('\n');
+if(el)el.textContent=report;
+console.info(report);
+},
+         nat:async()=>{if(!LN)return;try{const p=await LN.requestPermissions();let ex='?';try{let e=await LN.checkExactNotificationSetting();ex=e.exact_alarm;if(ex!=='granted'){e=await LN.changeExactNotificationSetting();ex=e.exact_alarm}}catch(x){ex='n/a'}toast(T('الإشعارات: ','Notifications: ')+p.display+' · '+T('التنبيهات الدقيقة: ','Exact alarms: ')+ex);sched()}catch(x){toast('⚠ '+(x.message||x))}},
 tst:async()=>{try{await LN.schedule({notifications:[{id:1,title:T('تجربة إشعار','Test'),body:T('الإشعارات شغالة ✓','Notifications work ✓'),channelId:'rem',schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast(T('هيجيلك إشعار بعد 5 ثواني','Test in 5 seconds'))}catch(x){toast('⚠ '+(x.message||x))}},
 inst:()=>ip?ip.prompt():toast(T('افتح قائمة كروم ⋮ واختر «تثبيت التطبيق»','Chrome menu ⋮ → Install app')),
 st:(i,b)=>{S[b.dataset.k]=i;up()},en:()=>{if(!('Notification'in window))return toast(T('المتصفح لا يدعم الإشعارات','Not supported'));Notification.requestPermission().then(()=>{render();pins()})},
