@@ -517,6 +517,32 @@ for(const [i,g] of (o.groups||[]).entries()){
  }
 }
 
+ 
+if(has(o.notes)&&!AR(o.notes))return W('قائمة الملاحظات غير صالحة','invalid notes array');
+if((o.notes||[]).length>MAX_NOTES)return W('عدد الملاحظات أكبر من الحد الآمن','note count exceeds safe limit');
+
+let totalNoteContent=0;
+
+for(const [i,n] of (o.notes||[]).entries()){
+ const label=T('الملاحظة رقم '+(i+1),'note #'+(i+1)),err=(a,b)=>W(label+' — '+a,label+' — '+b);
+
+ if(!R(n)||!addId(n.id)||!text(n.title,500)||!n.title.trim())return err('بيانات الملاحظة أو معرّف مكرر','invalid note data or duplicate ID');
+
+ if(!text(n.content,100000))return err('محتوى الملاحظة أكبر من الحد المسموح','note content exceeds the allowed limit');
+
+ if(!stamp(n.createdAt)||!stamp(n.updatedAt))return err('تاريخ إنشاء أو تعديل الملاحظة غير صالح','invalid note creation or update timestamp');
+
+ if(has(n.subjectId)&&n.subjectId!==''&&!text(n.subjectId,256))return err('معرّف المادة المرتبطة غير صالح','invalid subject ID');
+
+ totalNoteContent+=n.content.length;
+
+ if(totalNoteContent>MAX_NOTE_CONTENT)return W('إجمالي محتوى الملاحظات أكبر من 500000 حرف','total note content exceeds 500000 characters');
+}
+
+for(const [i,n] of (o.notes||[]).entries()){
+ if(n.subjectId&&!subjectIds.has(n.subjectId))return W('الملاحظة رقم '+(i+1)+' — المادة المرتبطة غير موجودة','note #'+(i+1)+' — related subject does not exist');
+}
+
 for(const [i,x] of (o.tasks||[]).entries()){
  if(x.subjectId&&!subjectIds.has(x.subjectId))return W('المهمة رقم '+(i+1)+' — المادة المرتبطة غير موجودة','task #'+(i+1)+' — related subject does not exist');
 }
