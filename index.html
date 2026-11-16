@@ -410,6 +410,9 @@ else add('storage persistence API','not available');
 }catch(e){add('storage persistence API','ERROR: '+(e.message||e))}
 
 add('boot recovery',String(RECOVERY));
+ Object.entries(BOOT_TRACE).forEach(([stage,data])=>{
+ add('BOOT TRACE '+stage,JSON.stringify(data));
+});
 add('save failed flag',String(SAVE_FAILED));
 add('last good raw in memory',LAST_GOOD_RAW===null?'none':LAST_GOOD_RAW.length+' chars');
 
@@ -622,13 +625,82 @@ async function pins(){if(RECOVERY||!gr())return;try{const r=await navigator.serv
 cur.forEach(n=>{if(n.tag.startsWith('pin-')&&!tg.has(n.tag))n.close()});const have=new Set(cur.map(n=>n.tag));
 w.forEach(x=>{if(!have.has('pin-'+x.id))ntf(x.t,(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),'pin-'+x.id,true,x.id)})}catch(e){}}
 let tickRunning=false;async function tick(){if(LN||RECOVERY||tickRunning)return;tickRunning=true;try{const n=Date.now();for(const x of S.tasks){const d=due(x);if(x.x||!d)continue;x.fr=x.fr||[];for(const r of (x.rms||[])){if(!x.fr.includes(r)&&n>=d-r*6e4&&n<d+864e5){x.fr.push(r);if(!await save()){x.fr.pop();return}ntf(x.t,r?T('بعد ','In ')+rl(r):T('حان موعد المهمة','Task is due'),'rm-'+x.id+r,false).then(ok=>ok||toast('🔔 '+x.t))}}}}finally{tickRunning=false}}
+
 async function bootState(){
+ BOOT_TRACE={};
+
+ const trace=(stage,value)=>{
+  try{
+   const raw=typeof value==='string'?value:JSON.stringify(value);
+   const data=typeof value==='string'?JSON.parse(value):value;
+   BOOT_TRACE[stage]={
+    tasks:Array.isArray(data?.tasks)?data.tasks.length:-1,
+    groups:Array.isArray(data?.groups)?data.groups.length:-1,
+    length:raw===undefined?-1:raw.length,
+    hash:auditHash(raw)
+   };
+  }catch(e){
+   BOOT_TRACE[stage]={error:String(e.message||e)};
+  }
+ };
+
+ trace('raw',BOOT_RAW);
+ trace('parsed',BOOT_DATA);
+
  if(BOOT_ERROR){RECOVERY=true;return}
- if(BOOT_RAW===null){BOOT_ERROR='لم يتم العثور على سجل البيانات المحلي. قد يكون هذا تثبيتًا جديدًا أو أن مساحة التخزين القديمة غير متاحة؛ لن ننشئ بيانات فارغة تلقائيًا.';RECOVERY=true;return}
- const firstError=vld(BOOT_DATA);if(firstError){BOOT_ERROR=firstError;RECOVERY=true;return}
- try{const candidate=JSON.parse(JSON.stringify(BOOT_DATA));Object.assign(candidate,DEFAULT_STATE(),candidate);mig(candidate);const secondError=vld(candidate);if(secondError){BOOT_ERROR=secondError;RECOVERY=true;return}S=candidate;
-  const migrated=JSON.stringify(candidate);LAST_GOOD_RAW=BOOT_RAW;if(migrated!==BOOT_RAW){try{await backupStore(BOOT_RAW);localStorage.setItem(K,migrated);if(localStorage.getItem(K)!==migrated)throw new Error('Migration storage verification failed');BOOT_RAW=migrated;LAST_GOOD_RAW=migrated}catch(e){BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);RECOVERY=true}}
- }catch(e){BOOT_ERROR='تعذر ترحيل البيانات بأمان: '+(e&&e.message||e);RECOVERY=true}
+ if(BOOT_RAW===null){
+  BOOT_ERROR='لم يتم العثور على سجل البيانات المحلي. قد يكون هذا تثبيتًا جديدًا أو أن مساحة التخزين القديمة غير متاحة؛ لن ننشئ بيانات فارغة تلقائيًا.';
+  RECOVERY=true;
+  return;
+ }
+
+ const firstError=vld(BOOT_DATA);
+ BOOT_TRACE.firstValidation=firstError||'valid';
+ if(firstError){BOOT_ERROR=firstError;RECOVERY=true;return}
+
+ try{
+  const candidate=JSON.parse(JSON.stringify(BOOT_DATA));
+  trace('after clone',candidate);
+
+  Object.assign(candidate,DEFAULT_STATE(),candidate);
+  trace('after assign',candidate);
+
+  mig(candidate);
+  trace('after migration',candidate);
+
+  const secondError=vld(candidate);
+  BOOT_TRACE.secondValidation=secondError||'valid';
+  if(secondError){BOOT_ERROR=secondError;RECOVERY=true;return}
+
+  S=candidate;
+  trace('assigned to S',S);
+
+  const migrated=JSON.stringify(candidate);
+  trace('migration output',migrated);
+
+  LAST_GOOD_RAW=BOOT_RAW;
+
+  if(migrated!==BOOT_RAW){
+   try{
+    await backupStore(BOOT_RAW);
+    trace('before storage write',migrated);
+
+    localStorage.setItem(K,migrated);
+
+    if(localStorage.getItem(K)!==migrated)
+     throw new Error('Migration storage verification failed');
+
+    BOOT_RAW=migrated;
+    LAST_GOOD_RAW=migrated;
+   }catch(e){
+    BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);
+    RECOVERY=true;
+   }
+  }
+ }catch(e){
+  BOOT_ERROR='تعذر ترحيل البيانات بأمان: '+(e&&e.message||e);
+  RECOVERY=true;
+ }
 }
 const bootReady=bootState().then(async()=>{if(!RECOVERY&&LAST_GOOD_RAW){try{await backupStore(LAST_GOOD_RAW)}catch(e){RECOVERY=true;BOOT_ERROR='تعذر إنشاء أول نسخة حماية؛ تم إيقاف التعديل حتى لا تتعرض بياناتك للخطر: '+(e&&e.message||e);console.error('ENJAZI initial backup failed:',e)}}}).catch(e=>{RECOVERY=true;BOOT_ERROR='تعذر بدء حماية البيانات: '+(e&&e.message||e);console.error('ENJAZI boot failed:',e)});
 async function consumeNativeTaskLaunch(){if(RECOVERY||!NP.PersistentTasks||typeof NP.PersistentTasks.consumePendingTask!=='function')return;try{const result=await NP.PersistentTasks.consumePendingTask();const taskId=result&&result.taskId;if(taskId){const task=S.tasks.find(x=>x.id===taskId);if(task)openSheet(taskId);else toast(T('المهمة المرتبطة بالإشعار غير موجودة','The task linked to the notification was not found'))}}catch(e){console.error('ENJAZI notification launch handling failed:',e)}}
