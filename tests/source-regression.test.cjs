@@ -50,6 +50,23 @@ test('task editor and task list support subject association', () => {
 });
 
 
+test('legacy states initialize notes without losing existing collections', () => {
+  assert.match(html, /const DEFAULT_STATE=\(\)=>\(\{[^}]*notes:\[\]/);
+  assert.match(html, /if\(!Array\.isArray\(s\.notes\)\)s\.notes=\[\]/);
+});
+
+test('notes are validated with stable IDs and optional subject links', () => {
+  assert.match(html, /if\(has\(o\.notes\)&&!AR\(o\.notes\)\)/);
+  assert.match(html, /if\(\(o\.notes\|\|\[\]\)\.length>MAX_NOTES\)/);
+  assert.match(html, /for\(const \[i,n\] of \(o\.notes\|\|\[\]\)\.entries\(\)\)/);
+  assert.match(html, /!addId\(n\.id\)/);
+  assert.match(html, /text\(n\.title,500\)&&n\.title\.trim\(\)/);
+  assert.match(html, /text\(n\.content,100000\)/);
+  assert.match(html, /stamp\(n\.createdAt\)/);
+  assert.match(html, /stamp\(n\.updatedAt\)/);
+  assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
+});
+
 test('backup import requires both task and section arrays', () => {
   assert.match(html, /!AR\(o\.tasks\)\|\|!AR\(o\.groups\)/);
 });
