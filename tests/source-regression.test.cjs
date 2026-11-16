@@ -31,7 +31,7 @@ test('task subject association is independent from legacy lecture link', () => {
   assert.match(html, /if\(has\(x\.lk\)&&!text\(x\.lk,600\)\)/);
   assert.match(html, /if\(has\(x\.subjectId\)&&x\.subjectId!==''&&!text\(x\.subjectId,256\)\)/);
   assert.match(html, /if\(x\.subjectId&&!subjectIds\.has\(x\.subjectId\)\)/);
-  assert.match(html, /if\(x\.lk\)continue;/);
+  assert.match(html, /if\(!x\.lk\)continue;/);
 });
 
 test('subject deletion unlinks associated tasks without deleting them', () => {
