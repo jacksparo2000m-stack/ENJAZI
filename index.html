@@ -41,6 +41,128 @@ nav button{flex:1;padding:10px;display:flex;flex-direction:column;align-items:ce
 <script>if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())document.write('<script src="native.js"><\/script>')</script>
 <script>
 const $=s=>document.querySelector(s),K='pt2',uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),p2=n=>String(n).padStart(2,'0');
+ 
+// ENJAZI WRITE AUDIT — independent, read-only with respect to app data
+const AUDIT_DB='enjazi-write-audit',AUDIT_STORE='events';
+let auditDbPromise=null;
+
+function auditOpen(){
+ if(auditDbPromise)return auditDbPromise;
+ auditDbPromise=new Promise((resolve,reject)=>{
+  const req=indexedDB.open(AUDIT_DB,1);
+  req.onupgradeneeded=()=>{
+   const db=req.result;
+   if(!db.objectStoreNames.contains(AUDIT_STORE))
+    db.createObjectStore(AUDIT_STORE,{keyPath:'id'});
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error||new Error('Audit DB open failed'));
+ });
+ return auditDbPromise;
+}
+
+function auditHash(raw){
+ if(raw===null)return 'null';
+ let h=2166136261;
+ for(let i=0;i<raw.length;i++){
+  h^=raw.charCodeAt(i);
+  h=Math.imul(h,16777619);
+ }
+ return (h>>>0).toString(16).padStart(8,'0');
+}
+
+function auditTasks(raw){
+ try{
+  const data=JSON.parse(raw);
+  return Array.isArray(data.tasks)?data.tasks.length:-1;
+ }catch(e){return -1}
+}
+
+function auditRecord(event){
+ try{
+  auditOpen().then(db=>{
+   const tx=db.transaction(AUDIT_STORE,'readwrite');
+   const store=tx.objectStore(AUDIT_STORE);
+   store.put({
+    id:String(Date.now()).padStart(13,'0')+'-'+Math.random().toString(36).slice(2,8),
+    at:Date.now(),
+    ...event
+   });
+   const req=store.getAllKeys();
+   req.onsuccess=()=>{
+    const keys=(req.result||[]).sort();
+    keys.slice(0,Math.max(0,keys.length-100))
+     .forEach(key=>store.delete(key));
+   };
+  }).catch(e=>console.warn('ENJAZI audit unavailable:',e));
+ }catch(e){}
+}
+
+async function auditList(){
+ const db=await auditOpen();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(AUDIT_STORE,'readonly');
+  const req=tx.objectStore(AUDIT_STORE).getAll();
+  req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>b.at-a.at));
+  req.onerror=()=>reject(req.error||new Error('Audit read failed'));
+ });
+}
+
+function auditCapture(type,before,after,error){
+ auditRecord({
+  type,
+  beforeTasks:auditTasks(before),
+  afterTasks:auditTasks(after),
+  beforeLength:before===null?-1:before.length,
+  afterLength:after===null?-1:after.length,
+  beforeHash:auditHash(before),
+  afterHash:auditHash(after),
+  error:error?String(error.message||error):'',
+  stack:(new Error().stack||'').split('\n').slice(2,7).join(' | ')
+ });
+}
+
+const auditStorage=Storage.prototype;
+const auditOriginalSet=auditStorage.setItem;
+const auditOriginalRemove=auditStorage.removeItem;
+const auditOriginalClear=auditStorage.clear;
+
+auditStorage.setItem=function(key,value){
+ const tracked=this===window.localStorage&&String(key)===K;
+ let before=null;
+ if(tracked){try{before=this.getItem(K)}catch(e){}}
+ try{
+  const result=auditOriginalSet.call(this,key,value);
+  if(tracked){
+   let after=null;
+   try{after=this.getItem(K)}catch(e){}
+   auditCapture('setItem',before,after);
+  }
+  return result;
+ }catch(e){
+  if(tracked)auditCapture('setItem-error',before,before,e);
+  throw e;
+ }
+};
+
+auditStorage.removeItem=function(key){
+ const tracked=this===window.localStorage&&String(key)===K;
+ let before=null;
+ if(tracked){try{before=this.getItem(K)}catch(e){}}
+ const result=auditOriginalRemove.call(this,key);
+ if(tracked)auditCapture('removeItem',before,null);
+ return result;
+};
+
+auditStorage.clear=function(){
+ const tracked=this===window.localStorage;
+ let before=null;
+ if(tracked){try{before=this.getItem(K)}catch(e){}}
+ const result=auditOriginalClear.call(this);
+ if(tracked)auditCapture('clear',before,null);
+ return result;
+};
+
 const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
 const DEFAULT_STATE=()=>({lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[]});
 let S=DEFAULT_STATE(),BOOT_RAW=null,BOOT_DATA=null,BOOT_ERROR='',BOOT_READ_FAILED=false,RECOVERY=false,SAVE_FAILED=false,LAST_GOOD_RAW=null;
