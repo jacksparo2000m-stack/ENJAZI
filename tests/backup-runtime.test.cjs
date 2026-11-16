@@ -124,6 +124,7 @@ function createSaveHarness(backupStore) {
   };
 
   const context = {
+    K: 'pt2',
     S: {
       lang: 'ar',
       tasks: [{ id: 'new' }],
