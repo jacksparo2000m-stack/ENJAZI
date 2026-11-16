@@ -77,6 +77,42 @@ test('backup import requires both task and section arrays', () => {
   assert.match(html, /!AR\(o\.tasks\)\|\|!AR\(o\.groups\)/);
 });
 
+test('backup export and import preserve notes and their subject links', () => {
+  const exportStart = html.indexOf('ex:async()=>');
+  const importStart = html.indexOf("$('#imp').addEventListener");
+  const importEnd = html.indexOf('r.readAsText(fl);', importStart);
+
+  assert.ok(exportStart >= 0);
+  assert.ok(importStart >= 0 && importEnd > importStart);
+
+  const exportHandler = html.slice(exportStart, importStart);
+  const importHandler = html.slice(importStart, importEnd);
+
+  // Export serializes the complete application state.
+  assert.match(exportHandler, /JSON\.stringify\(S,null,2\)/);
+
+  // Import validates the file before changing the current state.
+  assert.match(importHandler, /const er=vld\(o\)/);
+
+  // Import clones the complete imported object, including notes.
+  assert.match(importHandler, /const imported=JSON\.parse\(JSON\.stringify\(o\)\)/);
+  assert.match(importHandler, /Object\.assign\([\s\S]*?imported\)/);
+
+  // Migration and validation happen before persistence.
+  const migrateAt = importHandler.indexOf('mig(next)');
+  const validateAt = importHandler.indexOf('const postError=vld(next)');
+  const saveAt = importHandler.indexOf('const payload=JSON.stringify(next)');
+
+  assert.ok(migrateAt >= 0);
+  assert.ok(validateAt > migrateAt);
+  assert.ok(saveAt > validateAt);
+
+  // The complete imported state is saved and verified.
+  assert.match(importHandler, /localStorage\.setItem\(K,payload\)/);
+  assert.match(importHandler, /localStorage\.getItem\(K\)!==payload/);
+});
+
+
 test('backup restore validates snapshot and preserves current state before replacement', () => {
   const start = html.indexOf('async function restoreBackupRecord(record)');
   const end = html.indexOf('const enqueueSaveOperation=', start);
