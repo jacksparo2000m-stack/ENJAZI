@@ -260,8 +260,9 @@ function notesView(){
  <div class="card">
   <div class="row">
    <b>${T('كل الملاحظات','All notes')}</b>
-   <span class="tag">${notes.length}</span>
+      <span class="tag">${notes.length}</span>
   </div>
+  <button class="btn w" data-a="nn">＋ ${T('ملاحظة جديدة','New note')}</button>
  </div>
  ${notes.length?notes.map(n=>`<div class="card"><b>${E(n.title)}</b></div>`).join(''):`<div class="empty">📝<h2>${T('لسه مفيش ملاحظات','No notes yet')}</h2><p>${T('هنا هتقدر تنشئ ملاحظات مستقلة وتنظمها حسب موادك','Create independent notes and organize them by subject here')}</p></div>`}
 `;
