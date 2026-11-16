@@ -72,6 +72,15 @@ test('notes are validated with stable IDs and optional subject links', () => {
   assert.match(html, /stamp\(n\.updatedAt\)/);
   assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
 });
+
+test('notepad cards open existing notes for editing', () => {
+  assert.match(html, /function editNoteSheet\(id\)/);
+  assert.match(html, /const note=S\.notes\.find\(n=>n\.id===id\)/);
+  assert.match(html, /ND=\{\.\.\.note\}/);
+  assert.match(html, /data-a="ne" data-i="\$\{E\(n\.id\)\}"/);
+  assert.match(html, /ne:i=>editNoteSheet\(i\)/);
+  assert.match(html, /else S\.notes\[index\]=note/);
+});
 test('notepad navigation renders the notes page and escapes note titles', () => {
   const start = html.indexOf('function notesView(){');
   const end = html.indexOf('function render()', start);
