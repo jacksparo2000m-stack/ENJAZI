@@ -515,6 +515,10 @@ for(const [i,g] of (o.groups||[]).entries()){
   }
  }
 }
+
+for(const [i,x] of (o.tasks||[]).entries()){
+ if(x.subjectId&&!subjectIds.has(x.subjectId))return W('المهمة رقم '+(i+1)+' — المادة المرتبطة غير موجودة','task #'+(i+1)+' — related subject does not exist');
+}
 for(const [i,x] of (o.tasks||[]).entries()){
  if(!x.lk)continue;
  const parts=x.lk.split(':');
