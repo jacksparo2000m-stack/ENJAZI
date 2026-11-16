@@ -61,7 +61,7 @@ test('migration rejects invalid notes collections instead of resetting them', ()
 });
 
 test('notes are validated with stable IDs and optional subject links', () => {
-  assert.match(html, /if\(has\(o\.notes\)&&!AR\(o\.notes\)\)/);
+  assert.match(html, /if\(Object\.prototype\.hasOwnProperty\.call\(o,'notes'\)&&!AR\(o\.notes\)\)/);
   assert.match(html, /if\(\(o\.notes\|\|\[\]\)\.length>MAX_NOTES\)/);
   assert.match(html, /for\(const \[i,n\] of \(o\.notes\|\|\[\]\)\.entries\(\)/);
   assert.match(html, /!addId\(n\.id\)/);
