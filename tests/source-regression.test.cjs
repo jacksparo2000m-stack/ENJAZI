@@ -77,6 +77,30 @@ test('backup import requires both task and section arrays', () => {
   assert.match(html, /!AR\(o\.tasks\)\|\|!AR\(o\.groups\)/);
 });
 
+test('backup restore validates snapshot and preserves current state before replacement', () => {
+  const start = html.indexOf('async function restoreBackupRecord(record)');
+  const end = html.indexOf('const enqueueSaveOperation=', start);
+  assert.ok(start >= 0 && end > start);
+
+  const restore = html.slice(start, end);
+
+  assert.match(restore, /record\.checksum!==backupHash\(record\.raw\)/);
+  assert.match(restore, /const data=JSON\.parse\(record\.raw\),invalid=vld\(data\)/);
+  assert.match(restore, /mig\(next\);const postError=vld\(next\)/);
+
+  const preserveAt = restore.indexOf("const rawKey=K+'_pre_restore_'+Date.now()");
+  const replaceAt = restore.indexOf('localStorage.setItem(K,payload)');
+
+  assert.ok(preserveAt >= 0 && replaceAt > preserveAt);
+  assert.match(restore.slice(preserveAt, replaceAt), /localStorage\.getItem\(rawKey\)!==currentRaw/);
+
+  const verifyAt = restore.indexOf('localStorage.getItem(K)!==payload');
+  const commitAt = restore.indexOf('LAST_GOOD_RAW=payload;S=next');
+
+  assert.ok(verifyAt >= 0 && commitAt > verifyAt);
+});
+
+
 test('backup import preserves current raw data before replacement', () => {
   const backupAt = html.indexOf("const backupKey=K+'_preimport_'+Date.now()");
   const replaceAt = html.indexOf('localStorage.setItem(K,payload)', backupAt);
