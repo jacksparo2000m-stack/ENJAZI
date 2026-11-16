@@ -105,3 +105,109 @@ test('save-operation queue executes mutations, imports, and restores in strict o
   await Promise.all([first, second, third]);
   assert.deepEqual(order, ['save-start', 'save-end', 'import', 'restore']);
 });
+
+function createSaveHarness(backupStore) {
+  const oldRaw = JSON.stringify({
+    lang: 'ar',
+    tasks: [{ id: 'old' }],
+    groups: []
+  });
+
+  const values = new Map([['pt2', oldRaw]]);
+  const localStorage = {
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    }
+  };
+
+  const context = {
+    S: {
+      lang: 'ar',
+      tasks: [{ id: 'new' }],
+      groups: []
+    },
+    LAST_GOOD_RAW: oldRaw,
+    RECOVERY: false,
+    SAVE_FAILED: false,
+    localStorage,
+    backupStore,
+    enqueueSaveOperation: work => Promise.resolve().then(work),
+    toast() {},
+    T: (ar, en) => ar,
+    console,
+    clearTimeout() {},
+    setTimeout() { return 1; },
+    window: {},
+    sched() {}
+  };
+
+  const start = html.indexOf('const save=');
+  const end = html.indexOf(',T=', start);
+
+  assert.ok(start >= 0 && end > start, 'save function should exist');
+
+  const save = vm.runInNewContext(
+    html.slice(start, end) + '\n;save',
+    context
+  );
+
+  return {
+    save,
+    context,
+    oldRaw,
+    getStored: () => localStorage.getItem('pt2')
+  };
+}
+
+test('primary storage is verified before backup starts', async () => {
+  let announceBackup;
+  let releaseBackup;
+
+  const backupStarted = new Promise(resolve => {
+    announceBackup = resolve;
+  });
+
+  const backupGate = new Promise(resolve => {
+    releaseBackup = resolve;
+  });
+
+  const harness = createSaveHarness(async raw => {
+    announceBackup(raw);
+    await backupGate;
+    return true;
+  });
+
+  const saving = harness.save(false);
+
+  const backupRaw = await backupStarted;
+
+  assert.equal(backupRaw, harness.oldRaw);
+  assert.equal(
+    JSON.parse(harness.getStored()).tasks[0].id,
+    'new',
+    'new task must be stored before backup is awaited'
+  );
+
+  releaseBackup();
+
+  assert.equal(await saving, true);
+});
+
+test('backup failure does not undo a verified primary save', async () => {
+  const harness = createSaveHarness(async () => {
+    throw new Error('Simulated backup failure');
+  });
+
+  const result = await harness.save(false);
+
+  assert.equal(result, true);
+  assert.equal(
+    JSON.parse(harness.getStored()).tasks[0].id,
+    'new'
+  );
+  assert.equal(harness.context.SAVE_FAILED, false);
+});
+
