@@ -464,7 +464,7 @@ const text=(v,max=5000)=>B(v,'string')&&v.length<=max;
 const stamp=v=>N(v)&&Math.abs(v)<=8640000000000000;
 const date=v=>{if(!B(v,'string')||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split('-').map(Number),x=new Date(Date.UTC(y,m-1,d));return x.getUTCFullYear()===y&&x.getUTCMonth()===m-1&&x.getUTCDate()===d};
 const time=v=>B(v,'string')&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v);
-const ids=new Set(),addId=(v)=>{if(!text(v,256)||!v.trim()||ids.has(v))return false;ids.add(v);return true};
+const ids=new Set(),subjectIds=new Set(),addId=(v)=>{if(!text(v,256)||!v.trim()||ids.has(v))return false;ids.add(v);return true};
 if(!R(o)||!AR(o.tasks)||!AR(o.groups))return T('النسخة الاحتياطية غير مكتملة: يجب أن تحتوي على المهام والأقسام معًا','Incomplete backup: both tasks and sections arrays are required');
 if((has(o.tasks)&&!AR(o.tasks))||(has(o.groups)&&!AR(o.groups))||(has(o.cats)&&!(AR(o.cats)&&o.cats.length<=1000&&o.cats.every(c=>text(c,200)))))return W('بنية الأقسام أو المهام','tasks/sections structure');
 if((o.tasks||[]).length>MAX_TASKS||(o.groups||[]).length>MAX_GROUPS)return W('عدد المهام أو الأقسام أكبر من الحد الآمن','task or section count exceeds safe limits');
@@ -500,6 +500,7 @@ for(const [i,g] of (o.groups||[]).entries()){
  for(const [j,it] of g.it.entries()){
   const itemLabel=label+T(' — المادة رقم ',' — item #')+(j+1),err=(a,b)=>W(itemLabel+' — '+a,itemLabel+' — '+b);
   if(!R(it)||!addId(it.id)||!text(it.n,500)||!it.n.trim())return err('بيانات المادة أو معرّف مكرر','invalid item data or duplicate ID');
+  subjectIds.add(it.id);
   if(has(it.total)&&!(Number.isSafeInteger(it.total)&&it.total>=0&&it.total<=1000000))return err('العدد الكلي','total count');
   if(has(it.done)&&!(Number.isSafeInteger(it.done)&&it.done>=0&&it.done<=5000))return err('عدد المنجز أكبر من حد الترحيل الآمن','completed count exceeds safe migration limit');
   if(has(it.last)&&!stamp(it.last))return err('تاريخ آخر إنجاز','last completion timestamp');
