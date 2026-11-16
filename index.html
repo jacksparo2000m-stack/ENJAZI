@@ -150,9 +150,10 @@ di:()=>{if(confirm(T('حذف المادة؟','Delete?'))){const G=S.groups.find(
 rmt:i=>{sync();const r=+i;D.rms=D.rms.includes(r)?D.rms.filter(z=>z!==r):[...D.rms,r];draw()},ct:()=>{sync();D.tm='';draw()},
 qt:i=>{sync();const t=new Date();if(i==='h')t.setHours(t.getHours()+1);else if(i==='n')t.setHours(20,0,0,0);else{t.setDate(t.getDate()+1);t.setHours(9,0,0,0)}D.d=iso(t);D.tm=p2(t.getHours())+':'+p2(t.getMinutes());if(!D.rms.length)D.rms=[0];draw()},
 qa:()=>{const t=nlp($('#qa').value);if(!t)return toast(T('اكتب المهمة','Type a task'));S.tasks.push(t);up().then(ok=>{if(ok)toast('✓ '+t.t+(t.d?' · '+fdt(t.d,t.tm):''))})},
+
 diag:async()=>{
 const el=$('#diagout');
-if(el){el.hidden=false;el.textContent='Checking storage...'}
+if(el){el.hidden=false;el.textContent='Checking storage and backups...'}
 const rows=[];
 const add=(k,v)=>rows.push(k+': '+v);
 let raw=null,data=null;
@@ -182,12 +183,33 @@ try{
 const backups=await backupList();
 add('backup database','readable');
 add('backup snapshots',backups.length);
-if(backups.length){
-const latest=backups[0];
-add('latest backup date',new Date(latest.createdAt).toString());
-add('latest backup checksum',latest.checksum===backupHash(latest.raw)?'valid':'INVALID');
+
+backups.forEach((record,index)=>{
+const prefix='BACKUP '+(index+1);
+add(prefix+' date',new Date(record.createdAt).toString());
+add(prefix+' size',record.raw?record.raw.length+' chars':'empty');
+const checksumOK=record.checksum===backupHash(record.raw);
+add(prefix+' checksum',checksumOK?'valid':'INVALID');
+
+if(!checksumOK){
+add(prefix+' data','NOT INSPECTED: checksum invalid');
+return;
 }
-}catch(e){add('backup database','ERROR: '+(e.message||e))}
+
+try{
+const backupData=JSON.parse(record.raw);
+const validationError=vld(backupData);
+add(prefix+' JSON','valid');
+add(prefix+' validation',validationError?'INVALID: '+validationError:'valid');
+add(prefix+' tasks',Array.isArray(backupData.tasks)?backupData.tasks.length:'invalid');
+add(prefix+' groups',Array.isArray(backupData.groups)?backupData.groups.length:'invalid');
+}catch(e){
+add(prefix+' JSON','INVALID: '+(e.message||e));
+}
+});
+}catch(e){
+add('backup database','ERROR: '+(e.message||e));
+}
 
 try{
 if(navigator.storage&&navigator.storage.persisted)
@@ -199,10 +221,11 @@ add('boot recovery',String(RECOVERY));
 add('save failed flag',String(SAVE_FAILED));
 add('last good raw in memory',LAST_GOOD_RAW===null?'none':LAST_GOOD_RAW.length+' chars');
 
-const report='ENJAZI STORAGE DIAGNOSTICS v1\n'+rows.join('\n');
+const report='ENJAZI STORAGE DIAGNOSTICS v2\n'+rows.join('\n');
 if(el)el.textContent=report;
 console.info(report);
 },
+
          nat:async()=>{if(!LN)return;try{const p=await LN.requestPermissions();let ex='?';try{let e=await LN.checkExactNotificationSetting();ex=e.exact_alarm;if(ex!=='granted'){e=await LN.changeExactNotificationSetting();ex=e.exact_alarm}}catch(x){ex='n/a'}toast(T('الإشعارات: ','Notifications: ')+p.display+' · '+T('التنبيهات الدقيقة: ','Exact alarms: ')+ex);sched()}catch(x){toast('⚠ '+(x.message||x))}},
 tst:async()=>{try{await LN.schedule({notifications:[{id:1,title:T('تجربة إشعار','Test'),body:T('الإشعارات شغالة ✓','Notifications work ✓'),channelId:'rem',schedule:{at:new Date(Date.now()+5000),allowWhileIdle:true}}]});toast(T('هيجيلك إشعار بعد 5 ثواني','Test in 5 seconds'))}catch(x){toast('⚠ '+(x.message||x))}},
 inst:()=>ip?ip.prompt():toast(T('افتح قائمة كروم ⋮ واختر «تثبيت التطبيق»','Chrome menu ⋮ → Install app')),
