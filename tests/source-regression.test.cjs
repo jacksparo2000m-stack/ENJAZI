@@ -27,6 +27,29 @@ test('legacy tasks receive arrays required by the editor', () => {
   assert.match(html, /if\(!Array\.isArray\(x\.fr\)\)x\.fr=\[\]/);
 });
 
+test('task subject association is independent from legacy lecture link', () => {
+  assert.match(html, /if\(has\(x\.lk\)&&!text\(x\.lk,600\)\)/);
+  assert.match(html, /if\(has\(x\.subjectId\)&&x\.subjectId!==''&&!text\(x\.subjectId,256\)\)/);
+  assert.match(html, /if\(x\.subjectId&&!subjectIds\.has\(x\.subjectId\)\)/);
+  assert.match(html, /if\(x\.lk\)continue;/);
+});
+
+test('subject deletion unlinks associated tasks without deleting them', () => {
+  assert.match(html, /const unlinkItems=\(groupId,items\)=>\{[\s\S]*?if\(x\.lk&&keys\.has\(x\.lk\)\)x\.lk='';[\s\S]*?if\(x\.subjectId&&ids\.has\(x\.subjectId\)\)x\.subjectId='';[\s\S]*?\};/);
+
+  assert.match(html, /di:\(\)=>\{[\s\S]*?unlinkItems\(P\.g,\[item\]\);[\s\S]*?G\.it=G\.it\.filter\(a=>a\.id!==P\.i\);/);
+
+  assert.match(html, /dg:i=>\{[\s\S]*?unlinkItems\(i,g\.it\);[\s\S]*?S\.groups=S\.groups\.filter\(a=>a\.id!==i\);/);
+});
+
+test('task editor and task list support subject association', () => {
+  assert.match(html, /D\.subjectId=su\?su\.value:''/);
+  assert.match(html, /!f\.subjectId\|\|x\.subjectId===f\.subjectId/);
+  assert.match(html, /id="subjectFilter"/);
+  assert.match(html, /id="fsu"/);
+});
+
+
 test('backup import requires both task and section arrays', () => {
   assert.match(html, /!AR\(o\.tasks\)\|\|!AR\(o\.groups\)/);
 });
