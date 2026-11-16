@@ -662,7 +662,7 @@ async function bootState(){
   const candidate=JSON.parse(JSON.stringify(BOOT_DATA));
   trace('after clone',candidate);
 
-  Object.assign(candidate,DEFAULT_STATE(),candidate);
+  Object.assign(candidate,DEFAULT_STATE(),JSON.parse(JSON.stringify(BOOT_DATA)));
   trace('after assign',candidate);
 
   mig(candidate);
