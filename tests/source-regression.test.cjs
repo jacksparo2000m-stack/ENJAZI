@@ -73,6 +73,14 @@ test('notes are validated with stable IDs and optional subject links', () => {
   assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
 });
 
+test('notepad save calculates projected limits correctly for create and edit', () => {
+  assert.match(html, /const index=S\.notes\.findIndex\(n=>n\.id===ND\.id\)/);
+  assert.match(html, /const currentTotal=S\.notes\.reduce\(\(a,n\)=>a\+n\.content\.length,0\)/);
+  assert.match(html, /const projectedCount=S\.notes\.length\+\(index<0\?1:0\)/);
+  assert.match(html, /const projectedTotal=currentTotal-\(index<0\?0:S\.notes\[index\]\.content\.length\)\+content\.length/);
+  assert.match(html, /projectedCount>50000\|\|projectedTotal>500000/);
+});
+
 test('notepad cards open existing notes for editing', () => {
   assert.match(html, /function editNoteSheet\(id\)/);
   assert.match(html, /const note=S\.notes\.find\(n=>n\.id===id\)/);
