@@ -69,7 +69,57 @@ async function backupStore(raw){if(typeof raw!=='string'||!raw)return false;let 
 async function backupList(){const db=await backupDB();return new Promise((resolve,reject)=>{const tx=db.transaction(BACKUP_STORE,'readonly'),req=tx.objectStore(BACKUP_STORE).getAll();req.onsuccess=()=>resolve((req.result||[]).sort(sortBackups));req.onerror=()=>reject(req.error||new Error('Could not read backups'))})}
 async function restoreBackupRecord(record){return enqueueSaveOperation(async()=>{if(!record||typeof record.raw!=='string'||record.checksum!==backupHash(record.raw))throw new Error('Backup integrity check failed');const data=JSON.parse(record.raw),invalid=vld(data);if(invalid)throw new Error(invalid);const next=JSON.parse(JSON.stringify(data));mig(next);const postError=vld(next);if(postError)throw new Error(postError);const payload=JSON.stringify(next),currentRaw=localStorage.getItem(K);if(currentRaw!==null){const rawKey=K+'_pre_restore_'+Date.now();localStorage.setItem(rawKey,currentRaw);if(localStorage.getItem(rawKey)!==currentRaw)throw new Error('Pre-restore raw backup verification failed');try{if(currentRaw!==LAST_GOOD_RAW&&!vld(JSON.parse(currentRaw)))await backupStore(currentRaw)}catch(e){console.warn('Current state was preserved as raw data but not added to validated snapshots:',e)}}if(LAST_GOOD_RAW&&LAST_GOOD_RAW!==payload&&LAST_GOOD_RAW!==currentRaw)await backupStore(LAST_GOOD_RAW);localStorage.setItem(K,payload);if(localStorage.getItem(K)!==payload)throw new Error('Restored data verification failed');LAST_GOOD_RAW=payload;S=next;BOOT_RAW=payload;BOOT_DATA=next;RECOVERY=false;SAVE_FAILED=false;BOOT_ERROR='';BOOT_READ_FAILED=false;render();toast(T('تم استرجاع النسخة الاحتياطية بنجاح','Backup restored successfully'))});}
 const enqueueSaveOperation=work=>{const result=saveQueue.then(work,work);saveQueue=result.then(()=>{},()=>{});return result};
-const save=(scheduleNotifications=true)=>{if(RECOVERY)return Promise.resolve(false);const run=async()=>{if(RECOVERY)return false;let payload;try{payload=JSON.stringify(S)}catch(e){return false}try{if(LAST_GOOD_RAW&&LAST_GOOD_RAW!==payload)await backupStore(LAST_GOOD_RAW);localStorage.setItem(K,payload);if(localStorage.getItem(K)!==payload)throw new Error('Storage verification failed');SAVE_FAILED=false;LAST_GOOD_RAW=payload;return true}catch(e){SAVE_FAILED=true;console.error('ENJAZI save failed:',e);if(typeof toast==='function')toast(T('فشل الحفظ أو النسخ الاحتياطي؛ لم يتم تأكيد التغيير.','Save or backup failed; the change was not confirmed.'));if(LAST_GOOD_RAW!==null&&JSON.stringify(S)===payload){try{S=JSON.parse(LAST_GOOD_RAW)}catch(x){}}return false}};return enqueueSaveOperation(run).then(ok=>{clearTimeout(save.t);save.t=ok&&scheduleNotifications?setTimeout(()=>window.sched&&sched(),300):null;return ok})},T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
+
+const save=(scheduleNotifications=true)=>{
+ if(RECOVERY)return Promise.resolve(false);
+ const run=async()=>{
+  if(RECOVERY)return false;
+  let payload;
+  try{
+   payload=JSON.stringify(S);
+  }catch(e){
+   return false;
+  }
+
+  const previousRaw=LAST_GOOD_RAW;
+
+  // Save the primary data first.
+  try{
+   localStorage.setItem(K,payload);
+   if(localStorage.getItem(K)!==payload)
+    throw new Error('Storage verification failed');
+
+   SAVE_FAILED=false;
+   LAST_GOOD_RAW=payload;
+  }catch(e){
+   SAVE_FAILED=true;
+   console.error('ENJAZI primary save failed:',e);
+   if(typeof toast==='function')
+    toast(T('فشل حفظ البيانات؛ لم يتم تأكيد التغيير.','Data save failed; the change was not confirmed.'));
+   if(previousRaw!==null&&JSON.stringify(S)===payload){
+    try{S=JSON.parse(previousRaw)}catch(x){}
+   }
+   return false;
+  }
+
+  // Backup is secondary: its failure must not undo a verified save.
+  if(previousRaw&&previousRaw!==payload){
+   try{
+    await backupStore(previousRaw);
+   }catch(e){
+    console.error('Primary save succeeded but backup failed:',e);
+    if(typeof toast==='function')
+     toast(T('تم حفظ المهمة، لكن تعذر تحديث النسخة الاحتياطية.','Task saved, but backup could not be updated.'));
+   }
+  }
+  return true;
+ };
+ return enqueueSaveOperation(run).then(ok=>{
+  clearTimeout(save.t);
+  save.t=ok&&scheduleNotifications?setTimeout(()=>window.sched&&sched(),300):null;
+  return ok;
+ });
+},T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
 const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const due=x=>x.d?new Date(x.d+'T'+(x.tm||'23:59')):null,od=x=>!x.x&&due(x)&&due(x)<new Date();
 const pct=(a,b)=>b?Math.round(a/b*100):0,bar=p=>`<div class="bar"><i style="width:${p}%"></i></div>`;
