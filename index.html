@@ -304,6 +304,11 @@ $('#sh').innerHTML=`<div class="bx"><h2>${S.tasks.some(x=>x.id===d.id)?T('تعد
 <label>${T('تذكيرات (اختر أكتر من واحد)','Reminders (pick several)')}</label><div class="chips">${[0,10,30,60,120,1440].map(r=>`<button class="chip${d.rms.includes(r)?' on':''}" data-a="rmt" data-i="${r}">${r?rl(r)+T(' قبلها',' before'):T('في الموعد','At due time')}</button>`).join('')}</div><div><label>${T('تكرار','Repeat')}</label><select id="frp">${op([['',T('بدون','None')],['d',T('يوميًا','Daily')],['w',T('أسبوعيًا','Weekly')],['m',T('شهريًا','Monthly')],['y',T('سنويًا','Yearly')]],d.rp)}</select></div>
 <label>${T('الأولوية','Priority')}</label><div class="chips">${[[3,T('مهمة جدًا','High'),'hi'],[2,T('متوسطة','Medium'),'me'],[1,T('عادية','Low'),'lo']].map(([n,l])=>`<button class="chip${d.p===n?' on':''}" data-a="pr" data-i="${n}">${l}</button>`).join('')}</div>
 <label>${T('التصنيف (اكتب أي تصنيف)','Category (type any)')}</label><input id="fc" class="in" value="${E(d.c)}" placeholder="${T('شخصي، كلية، مذاكرة...','Personal, College, Study...')}"><div class="chips">${cats.map(c=>`<button class="chip" data-a="cc" data-i="${E(c)}">${E(c)}</button>`).join('')}</div>
+<label>${T('المادة المرتبطة بالمهمة (اختياري)','Related subject (optional)')}</label>
+<select id="fsu" class="in">
+<option value="">${T('بدون مادة','No subject')}</option>
+${S.groups.flatMap(g=>g.it).map(i=>`<option value="${E(i.id)}" ${d.subjectId===i.id?'selected':''}>${E(i.n)}</option>`).join('')}
+</select>
 <label><input id="fpin" type="checkbox"${d.pin?' checked':''}> ${T('ثبّت في شريط الإشعارات (للمهمة المهمة/المتوسطة)','Pin to notification shade (high/medium)')}</label>
 <label>${T('مهام فرعية','Subtasks')}</label>${d.sub.map((s,i)=>`<div class="row"><label style="margin:4px 0"><input type="checkbox" data-a="ts" data-i="${i}"${s.x?' checked':''}> ${E(s.t)}</label><button class="ic" data-a="rs" data-i="${i}">✕</button></div>`).join('')}
 <div class="two"><input id="fs" class="in" placeholder="${T('أضف مهمة فرعية','Add a subtask')}"><button class="btn" style="flex:none" data-a="as">＋</button></div>
