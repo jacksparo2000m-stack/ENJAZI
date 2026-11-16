@@ -16,7 +16,7 @@ test('inline application JavaScript parses', () => {
 });
 
 test('missing primary storage enters recovery instead of creating an empty state', () => {
-  assert.match(html, /if\(BOOT_RAW===null\)\{BOOT_ERROR=.*?RECOVERY=true;return\}/s);
+  assert.match(html, /if\s*\(\s*BOOT_RAW\s*===\s*null\s*\)\s*\{\s*BOOT_ERROR\s*=.*?RECOVERY\s*=\s*true\s*;\s*return\s*;?\s*\}/s);
   assert.match(html, /data-recovery="start"/);
   assert.match(html, /BOOT_READ_FAILED=true/);
   assert.match(html, /a==='start'&&BOOT_RAW===null&&!BOOT_READ_FAILED/);
@@ -56,7 +56,7 @@ test('fresh reset verifies both recovery backup and fresh state before switching
 });
 
 test('data migration verifies the persisted value before accepting it', () => {
-  assert.match(html, /localStorage\.setItem\(K,migrated\);if\(localStorage\.getItem\(K\)!==migrated\)throw new Error\('Migration storage verification failed'\)/);
+  assert.match(html, /localStorage\.setItem\(K,migrated\)\s*;\s*if\s*\(\s*localStorage\.getItem\(K\)\s*!==\s*migrated\s*\)\s*throw\s+new Error\('Migration storage verification failed'\)\s*;?/);
 });
 
 test('recurring task generation is deduplicated', () => {
