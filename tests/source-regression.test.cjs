@@ -72,6 +72,28 @@ test('notes are validated with stable IDs and optional subject links', () => {
   assert.match(html, /stamp\(n\.updatedAt\)/);
   assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
 });
+test('notepad navigation renders the notes page and escapes note titles', () => {
+  const start = html.indexOf('function notesView(){');
+  const end = html.indexOf('function render()', start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const view = html.slice(start, end);
+
+  // The notes page reads the existing notes collection.
+  assert.match(view, /const notes=S\.notes\|\|\[\]/);
+
+  // Note titles are escaped before being rendered.
+  assert.match(view, /E\(n\.title\)/);
+
+  // The notes page has Arabic and English labels.
+  assert.match(view, /T\('المفكرة','Notepad'\)/);
+
+  // Rendering and navigation both recognize the notes page.
+  assert.match(html, /v==='notes'\?notesView\(\)/);
+  assert.match(html, /\['notes','📝',T\('المفكرة','Notepad'\)\]/);
+  assert.match(html, /nv:i=>\{v=i;render\(\)\}/);
+});
 
 test('backup import requires both task and section arrays', () => {
   assert.match(html, /!AR\(o\.tasks\)\|\|!AR\(o\.groups\)/);
