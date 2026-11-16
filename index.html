@@ -488,6 +488,7 @@ for(const [i,x] of (o.tasks||[]).entries()){
  if(has(x.x)&&!(B(x.x,'boolean')||(N(x.x)&&x.x>=0&&stamp(x.x))))return err('حالة الإنجاز','completion state');
  if(has(x.fired)&&!(B(x.fired,'boolean')||(N(x.fired)&&[0,1].includes(x.fired))))return err('حالة التذكير','reminder state');
  if(has(x.lk)&&!text(x.lk,600))return err('ربط المادة','linked item');
+ if(has(x.subjectId)&&x.subjectId!==''&&!text(x.subjectId,256))return err('معرّف المادة المرتبطة غير صالح','invalid subject ID');
  if(has(x.rf)&&!text(x.rf,256))return err('مصدر المهمة المتكررة','recurrence source');
  if(has(x.sub)&&!(AR(x.sub)&&x.sub.length<=1000&&x.sub.every(a=>R(a)&&text(a.t,1000)&&(!has(a.x)||B(a.x,'boolean')||a.x===0||a.x===1))))return err('المهام الفرعية','subtasks');
   totalSubs+=(x.sub||[]).length;if(totalSubs>MAX_SUBTASKS)return W('عدد المهام الفرعية أكبر من الحد الآمن','subtask count exceeds safe limit');
