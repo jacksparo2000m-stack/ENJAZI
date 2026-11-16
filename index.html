@@ -287,9 +287,37 @@ function openNoteSheet(){
    </div>
   </div>`;
 
- $('#sh').hidden=0;
+  $('#sh').hidden=0;
 }
- 
+
+function editNoteSheet(id){
+ const note=S.notes.find(n=>n.id===id);
+ if(!note)return;
+
+ ND={...note};
+
+ $('#sh').innerHTML=`
+  <div class="bx">
+   <h2>${T('تعديل الملاحظة','Edit note')}</h2>
+
+   <label>${T('عنوان الملاحظة','Note title')}</label>
+   <input id="nt" class="in" value="${E(ND.title)}">
+
+   <label>${T('المحتوى','Content')}</label>
+   <textarea id="nc" rows="8">${E(ND.content)}</textarea>
+
+   <div class="two" style="margin-top:16px">
+    <button class="btn o" data-a="nclose">
+     ${T('إلغاء','Cancel')}
+    </button>
+    <button class="btn" data-a="nsave">
+     ${T('حفظ التعديلات','Save changes')}
+    </button>
+   </div>
+  </div>`;
+
+ $('#sh').hidden=0;
+} 
 function notesView(){
  const notes=S.notes||[];
  return `<h1>📝 ${T('المفكرة','Notepad')}</h1>
