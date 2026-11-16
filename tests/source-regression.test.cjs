@@ -124,7 +124,7 @@ test('notepad create and cancel handlers preserve safe save behavior', () => {
   assert.match(html, /title\.length>500\|\|content\.length>100000/);
 
   // Saving respects the total notes limits.
-  assert.match(html, /S\.notes\.length>=50000/);
+  assert.match(html, /projectedCount>50000\|\|projectedTotal>500000/);
   assert.match(html, /S\.notes\.push\(note\)/);
 
   // The form closes only after confirmed save success.
