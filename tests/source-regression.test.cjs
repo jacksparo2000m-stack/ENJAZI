@@ -50,18 +50,24 @@ test('task editor and task list support subject association', () => {
 });
 
 
+
 test('legacy states initialize notes without losing existing collections', () => {
   assert.match(html, /const DEFAULT_STATE=\(\)=>\(\{[^}]*notes:\[\]/);
-  assert.match(html, /if\(!Array\.isArray\(s\.notes\)\)s\.notes=\[\]/);
+  assert.match(html, /if\(!Object\.prototype\.hasOwnProperty\.call\(s,'notes'\)\)s\.notes=\[\]/);
+});
+
+test('migration rejects invalid notes collections instead of resetting them', () => {
+  assert.match(html, /else if\(!Array\.isArray\(s\.notes\)\)throw new Error\('Invalid notes collection'\)/);
 });
 
 test('notes are validated with stable IDs and optional subject links', () => {
   assert.match(html, /if\(has\(o\.notes\)&&!AR\(o\.notes\)\)/);
   assert.match(html, /if\(\(o\.notes\|\|\[\]\)\.length>MAX_NOTES\)/);
-  assert.match(html, /for\(const \[i,n\] of \(o\.notes\|\|\[\]\)\.entries\(\)\)/);
+  assert.match(html, /for\(const \[i,n\] of \(o\.notes\|\|\[\]\)\.entries\(\)/);
   assert.match(html, /!addId\(n\.id\)/);
   assert.match(html, /!text\(n\.title,500\)\|\|!n\.title\.trim\(\)/);
-assert.match(html, /MAX_NOTE_LENGTH=100000/); assert.match(html, /!text\(n\.content,MAX_NOTE_LENGTH\)/);
+  assert.match(html, /MAX_NOTE_LENGTH=100000/);
+  assert.match(html, /!text\(n\.content,MAX_NOTE_LENGTH\)/);
   assert.match(html, /stamp\(n\.createdAt\)/);
   assert.match(html, /stamp\(n\.updatedAt\)/);
   assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
