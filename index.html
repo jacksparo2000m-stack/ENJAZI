@@ -518,7 +518,7 @@ for(const [i,g] of (o.groups||[]).entries()){
 }
 
  
-if(has(o.notes)&&!AR(o.notes))return W('قائمة الملاحظات غير صالحة','invalid notes array');
+if(Object.prototype.hasOwnProperty.call(o,'notes')&&!AR(o.notes))return W('قائمة الملاحظات غير صالحة','invalid notes array');
 if((o.notes||[]).length>MAX_NOTES)return W('عدد الملاحظات أكبر من الحد الآمن','note count exceeds safe limit');
 
 let totalNoteContent=0;
