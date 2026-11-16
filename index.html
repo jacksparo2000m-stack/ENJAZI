@@ -528,7 +528,7 @@ for(const [i,n] of (o.notes||[]).entries()){
 
  if(!R(n)||!addId(n.id)||!text(n.title,500)||!n.title.trim())return err('بيانات الملاحظة أو معرّف مكرر','invalid note data or duplicate ID');
 
- if(!text(n.content,100000))return err('محتوى الملاحظة أكبر من الحد المسموح','note content exceeds the allowed limit');
+ if(!text(n.content,MAX_NOTE_LENGTH))return err('محتوى الملاحظة أكبر من الحد المسموح','note content exceeds the allowed limit');
 
  if(!stamp(n.createdAt)||!stamp(n.updatedAt))return err('تاريخ إنشاء أو تعديل الملاحظة غير صالح','invalid note creation or update timestamp');
 
