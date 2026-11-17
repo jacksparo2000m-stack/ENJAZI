@@ -326,10 +326,17 @@ function editNoteSheet(id){
 
  $('#sh').hidden=0;
 } 
+
 function notesListView(){
  const allNotes=S.notes||[];
+ const subjectNotes=noteSubjectFilter
+  ?allNotes.filter(n=>n.subjectId===noteSubjectFilter)
+  :allNotes;
+
  const q=noteQuery.trim().toLowerCase();
- const notes=q?allNotes.filter(n=>(n.title+' '+(n.content||'')).toLowerCase().includes(q)):allNotes;
+ const notes=q
+  ?subjectNotes.filter(n=>(n.title+' '+(n.content||'')).toLowerCase().includes(q))
+  :subjectNotes;
 
  if(!notes.length){
   return allNotes.length
@@ -339,7 +346,7 @@ function notesListView(){
 
  return notes.map(n=>`<div class="card" data-a="ne" data-i="${E(n.id)}" style="cursor:pointer"><b>${E(n.title)}</b><div class="sub">${T('اضغط لفتح الملاحظة وتعديلها','Tap to open and edit')}</div></div>`).join('');
 }
-
+ 
 function notesView(){
  const notes=S.notes||[];
  return `<h1>📝 ${T('المفكرة','Notepad')}</h1>
