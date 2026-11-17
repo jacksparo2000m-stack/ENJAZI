@@ -399,3 +399,29 @@ test('native persistent task sync remains independent of the optional pin checkb
   assert.doesNotMatch(native, /task\.pin/);
   assert.match(native, /await PersistentTasks\.sync\(\{ notifications \}\)/);
 });
+
+
+test('UI refresh and web reminder polling use separate timers', () => {
+  const start = html.indexOf('let tickRunning=');
+  const end = html.indexOf('bootReady.then(', start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const timerCode = html.slice(start, end);
+  const timers = [
+    ...timerCode.matchAll(/setInterval\(\(\)=>\{([\s\S]*?)\},20000\)/g)
+  ].map(match => match[1]);
+
+  assert.equal(timers.length, 2);
+
+  // Reminder polling must not run on Android when native notifications exist.
+  assert.match(timers[0], /if\(!CAP\|\|!LN\)tick\(\)/);
+
+  // UI refresh must remain independent from reminder polling.
+  assert.doesNotMatch(timers[1], /\btick\(\)/);
+  assert.match(timers[1], /clock\(\)/);
+  assert.match(timers[1], /lst\(\)/);
+
+  // Preserve the existing background UI refresh guard.
+  assert.match(timers[1], /CAP&&LN&&document\.hidden/);
+});
