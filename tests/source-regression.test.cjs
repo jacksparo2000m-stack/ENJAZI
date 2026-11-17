@@ -315,3 +315,57 @@ test('native plugin rejects malformed sync calls instead of clearing notices', (
   assert.match(plugin, /if \(notifications == null\)[\s\S]*?refusing to clear saved notices/);
   assert.match(plugin, /if \(ids == null\)[\s\S]*?Missing notification IDs/);
 });
+
+
+test('persistent task notifications are ongoing and low importance', () => {
+  const persistent = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTaskNotifications.java'),
+    'utf8'
+  );
+
+  assert.match(persistent, /NotificationManager\.IMPORTANCE_LOW/);
+  assert.match(persistent, /\.setOngoing\(true\)/);
+  assert.match(persistent, /\.setAutoCancel\(false\)/);
+  assert.match(persistent, /\.setOnlyAlertOnce\(true\)/);
+});
+
+test('persistent notifications are saved before updating the notification shade', () => {
+  const persistent = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTaskNotifications.java'),
+    'utf8'
+  );
+
+  const saveAt = persistent.indexOf(
+    'prefs.edit().putString(KEY, safe.toString()).commit()'
+  );
+  const cancelAt = persistent.indexOf('manager.cancel(oldId)');
+  const showAt = persistent.indexOf('show(context, item.optInt("id")');
+
+  assert.ok(saveAt >= 0, 'Persistent notifications must be saved');
+  assert.ok(cancelAt > saveAt, 'Old notifications must be cancelled after saving');
+  assert.ok(showAt > saveAt, 'New notifications must be shown after saving');
+});
+
+test('persistent task notifications are restored after reboot and app replacement', () => {
+  const receiver = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTaskRestoreReceiver.java'),
+    'utf8'
+  );
+  const persistent = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTaskNotifications.java'),
+    'utf8'
+  );
+
+  assert.match(receiver, /Intent\.ACTION_BOOT_COMPLETED/);
+  assert.match(receiver, /Intent\.ACTION_MY_PACKAGE_REPLACED/);
+  assert.match(receiver, /PersistentTaskNotifications\.restore\(context\)/);
+  assert.match(persistent, /static void restore\(Context context\)/);
+});
+
+test('native persistent notifications include only active medium and high priority tasks', () => {
+  assert.match(
+    native,
+    /\.filter\(task => task && !task\.x && Number\(task\.p\) >= 2\)/
+  );
+  assert.match(native, /await PersistentTasks\.sync\(\{ notifications \}\)/);
+});
