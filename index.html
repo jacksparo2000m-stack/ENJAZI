@@ -356,7 +356,7 @@ function notesView(){
    <b>${T('كل الملاحظات','All notes')}</b>
    <span class="tag">${notes.length}</span>
   </div>
-  <input class="in" id="noteSearch" type="search" value="${E(noteQuery)}" placeholder="${T('ابحث في العنوان والمحتوى...','Search titles and content...')}">
+  <select class="in" id="noteSubjectFilter">  <option value="">${T('كل المواد','All subjects')}</option>  ${S.groups.flatMap(g=>g.it).map(i=>`<option value="${E(i.id)}" ${noteSubjectFilter===i.id?'selected':''}>${E(i.n)}</option>`).join('')} </select> <select class="in" id="noteSubjectFilter">  <option value="">${T('كل المواد','All subjects')}</option>  ${S.groups.flatMap(g=>g.it).map(i=>`<option value="${E(i.id)}" ${noteSubjectFilter===i.id?'selected':''}>${E(i.n)}</option>`).join('')} </select> <input class="in" id="noteSearch" type="search" value="${E(noteQuery)}" placeholder="${T('ابحث في العنوان والمحتوى...','Search titles and content...')}">
   <button class="btn w" data-a="nn">＋ ${T('ملاحظة جديدة','New note')}</button>
  </div>
  <div id="notesList">${notesListView()}</div>
