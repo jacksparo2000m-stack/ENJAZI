@@ -369,3 +369,33 @@ test('native persistent notifications include only active medium and high priori
   );
   assert.match(native, /await PersistentTasks\.sync\(\{ notifications \}\)/);
 });
+
+test('Android scheduler does not create duplicate legacy pinned task notifications', () => {
+  const start = html.indexOf('async function sched()');
+  const end = html.indexOf('async function initN()', start);
+  assert.ok(start >= 0 && end > start);
+
+  const scheduler = html.slice(start, end);
+
+  // Native PersistentTasks is the only owner of persistent Android task notices.
+  assert.doesNotMatch(scheduler, /channelId:'pin'/);
+  assert.doesNotMatch(scheduler, /x\.pin&&x\.p>=2/);
+  assert.doesNotMatch(scheduler, /want\.add\(/);
+
+  // Existing timed reminders and snoozed reminders must remain intact.
+  assert.match(scheduler, /channelId:'rem'/);
+  assert.match(scheduler, /x\.sn>now/);
+
+  // Retire the old legacy pin ID list after collecting it for cleanup.
+  assert.match(scheduler, /gone=new Set\(S\.pin\|\|\[\]\)/);
+  assert.match(scheduler, /S\.pin=\[\]/);
+});
+
+test('native persistent task sync remains independent of the optional pin checkbox', () => {
+  assert.match(
+    native,
+    /\.filter\(task => task && !task\.x && Number\(task\.p\) >= 2\)/
+  );
+  assert.doesNotMatch(native, /task\.pin/);
+  assert.match(native, /await PersistentTasks\.sync\(\{ notifications \}\)/);
+});
