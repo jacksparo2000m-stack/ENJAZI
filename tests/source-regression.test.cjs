@@ -125,6 +125,16 @@ test('notepad navigation renders the notes page and escapes note titles', () => 
   assert.match(html, /nv:i=>\{v=i;render\(\)\}/);
 });
 
+test('notepad search filters note titles and content while typing', () => {
+  assert.match(html, /let noteQuery='';/);
+  assert.match(html, /function notesListView\(\)/);
+  assert.match(html, /noteQuery\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(html, /n\.title\+' '\+\(n\.content\|\|''\)/);
+  assert.match(html, /\.includes\(q\)/);
+  assert.match(html, /id="noteSearch"/);
+  assert.match(html, /e\.target\.id==='noteSearch'[\s\S]*?noteQuery=e\.target\.value[\s\S]*?notesListView\(\)/);
+});
+
 test('notepad create and cancel handlers preserve safe save behavior', () => {
   // New note button opens the note form.
   assert.match(html, /nn: *\(\)=>openNoteSheet\(\)/);
