@@ -797,17 +797,14 @@ if(m=cut(/(?:(?:الساعة|الساعه|at)\s*)?(\d{1,2})(?::(\d{2}))?\s*(صب
 const t=s.replace(/\s+/g,' ').trim();if(!t)return null;if(tm&&!dt){d=new Date();const[h,i]=tm.split(':').map(Number);d.setHours(h,i,0,0);if(d<now)d.setDate(d.getDate()+1);dt=iso(d)}
 return{id:uid(),t,n:'',d:dt,tm,rms:tm?[0]:[],rp:'',p:2,c:'',pin:true,sub:[],lk:'',x:0}}
 async function sched(){if(!LN||RECOVERY)return;try{
-const now=Date.now(),N=[],want=new Set(),gone=new Set(S.pin||[]);
+const now=Date.now(),N=[],gone=new Set(S.pin||[]);
 S.tasks.forEach(x=>{const ex={tid:x.id};if(x.x){gone.add(hid('p'+x.id));gone.add(hid(x.id+'|s'));(x.rms||[]).forEach(r=>gone.add(hid(x.id+'|'+r)));return}const d=due(x);
 if(d)(x.rms||[]).forEach(r=>{const at=d-r*6e4;if(at>now)N.push({id:hid(x.id+'|'+r),title:x.t,body:(r?T('بعد ','In ')+rl(r):T('حان الآن','Due now'))+(x.n?' · '+x.n:''),channelId:'rem',actionTypeId:'task',extra:ex,schedule:{at:new Date(at),allowWhileIdle:true}})});
-if(x.sn>now)N.push({id:hid(x.id+'|s'),title:'⏰ '+x.t,body:T('تذكير مؤجَّل','Snoozed reminder'),channelId:'rem',actionTypeId:'task',extra:ex,schedule:{at:new Date(x.sn),allowWhileIdle:true}});
-if(x.pin&&x.p>=2){const i=hid('p'+x.id);want.add(i);N.push({id:i,title:x.t,body:(x.p>2?T('مهمة مهمة جدًا','Very important'):T('مهمة متوسطة','Medium'))+(x.d?' · '+fdt(x.d,x.tm):''),channelId:'pin',ongoing:true,autoCancel:false,actionTypeId:'task',extra:ex})}});
-want.forEach(i=>gone.delete(i));
-const oldPin=S.pin;S.pin=[...want];if(!await save(false)){S.pin=oldPin;return}
+if(x.sn>now)N.push({id:hid(x.id+'|s'),title:'⏰ '+x.t,body:T('تذكير مؤجَّل','Snoozed reminder'),channelId:'rem',actionTypeId:'task',extra:ex,schedule:{at:new Date(x.sn),allowWhileIdle:true}})});
+const oldPin=S.pin;S.pin=[];if(!await save(false)){S.pin=oldPin;return}
 const pd=await LN.getPending();if(pd.notifications.length)await LN.cancel({notifications:pd.notifications});
 if(gone.size)await LN.removeDeliveredNotifications({notifications:[...gone].map(id=>({id}))});
-if(N.length)await LN.schedule({notifications:N})}catch(e){console.error('ENJAZI notification scheduling failed:',e)}}
-async function initN(){if(!LN||RECOVERY)return;try{await LN.requestPermissions();await LN.createChannel({id:'rem',name:T('تذكيرات المهام','Task reminders'),importance:5,vibration:true});await LN.createChannel({id:'pin',name:T('مهام ثابتة','Pinned tasks'),importance:2});
+if(N.length)await LN.schedule({notifications:N})}catch(e){console.error('ENJAZI notification scheduling failed:',e)}}async function initN(){if(!LN||RECOVERY)return;try{await LN.requestPermissions();await LN.createChannel({id:'rem',name:T('تذكيرات المهام','Task reminders'),importance:5,vibration:true});await LN.createChannel({id:'pin',name:T('مهام ثابتة','Pinned tasks'),importance:2});
 await LN.registerActionTypes({types:[{id:'task',actions:[{id:'snooze',title:T('تأجيل 10 د','Snooze 10m')},{id:'done',title:T('تم ✓','Done ✓')}]}]});
 LN.addListener('localNotificationActionPerformed',async e=>{const x=S.tasks.find(a=>a.id===(e.notification.extra||{}).tid);if(!x)return;if(e.actionId==='done'&&!x.x)H.tg(x.id);else if(e.actionId==='snooze'){const old=x.sn;x.sn=Date.now()+6e5;if(await save())toast(T('تم التأجيل 10 دقائق','Snoozed 10 min'));else if(old===undefined)delete x.sn;else x.sn=old}});sched()}catch(e){}}
 const gr=()=>'Notification'in window&&Notification.permission==='granted';
