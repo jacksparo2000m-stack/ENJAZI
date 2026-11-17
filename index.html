@@ -325,6 +325,20 @@ function editNoteSheet(id){
 
  $('#sh').hidden=0;
 } 
+function notesListView(){
+ const allNotes=S.notes||[];
+ const q=noteQuery.trim().toLowerCase();
+ const notes=q?allNotes.filter(n=>(n.title+' '+(n.content||'')).toLowerCase().includes(q)):allNotes;
+
+ if(!notes.length){
+  return allNotes.length
+   ?`<div class="empty">🔎<h2>${T('لا توجد ملاحظات مطابقة','No matching notes')}</h2></div>`
+   :`<div class="empty">📝<h2>${T('لسه مفيش ملاحظات','No notes yet')}</h2><p>${T('هنا هتقدر تنشئ ملاحظات مستقلة وتنظمها حسب موادك','Create independent notes and organize them by subject here')}</p></div>`;
+ }
+
+ return notes.map(n=>`<div class="card" data-a="ne" data-i="${E(n.id)}" style="cursor:pointer"><b>${E(n.title)}</b><div class="sub">${T('اضغط لفتح الملاحظة وتعديلها','Tap to open and edit')}</div></div>`).join('');
+}
+
 function notesView(){
  const notes=S.notes||[];
  return `<h1>📝 ${T('المفكرة','Notepad')}</h1>
@@ -332,11 +346,12 @@ function notesView(){
  <div class="card">
   <div class="row">
    <b>${T('كل الملاحظات','All notes')}</b>
-      <span class="tag">${notes.length}</span>
+   <span class="tag">${notes.length}</span>
   </div>
+  <input class="in" id="noteSearch" type="search" value="${E(noteQuery)}" placeholder="${T('ابحث في العنوان والمحتوى...','Search titles and content...')}">
   <button class="btn w" data-a="nn">＋ ${T('ملاحظة جديدة','New note')}</button>
  </div>
- ${notes.length?notes.map(n=>`<div class="card" data-a="ne" data-i="${E(n.id)}" style="cursor:pointer"><b>${E(n.title)}</b><div class="sub">${T('اضغط لفتح الملاحظة وتعديلها','Tap to open and edit')}</div></div>`).join(''):`<div class="empty">📝<h2>${T('لسه مفيش ملاحظات','No notes yet')}</h2><p>${T('هنا هتقدر تنشئ ملاحظات مستقلة وتنظمها حسب موادك','Create independent notes and organize them by subject here')}</p></div>`}
+ <div id="notesList">${notesListView()}</div>
 `;
 }
 
