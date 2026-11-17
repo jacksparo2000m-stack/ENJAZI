@@ -254,6 +254,7 @@ function clock(){const e=$('#clk');if(e)e.textContent=new Date().toLocaleString(
 function recoveryView(){const raw=BOOT_RAW===null?'':BOOT_RAW;return `<h1>⚠ ${T('حماية البيانات','Data protection')}</h1><div class="card"><b>${T('لم نتمكن من تحميل بياناتك بأمان','Your saved data could not be loaded safely')}</b><p class="mu" style="margin-top:8px">${E(BOOT_ERROR||'تعذر التحقق من بنية البيانات أو ترحيلها.')}</p><p style="margin-top:10px">${T('التطبيق متوقف مؤقتًا عن التعديل حتى لا يستبدل بياناتك ببيانات فارغة. صدّر النسخة الخام أولًا، أو أعد المحاولة.','Editing is paused so the app cannot overwrite your data with an empty state. Export the raw data first, or retry.')}</p></div><button class="btn w" data-recovery="export" ${raw?'':'disabled'}>${T('تصدير البيانات الخام','Export raw data')}</button><button class="btn o w" data-recovery="import">${T('استيراد نسخة احتياطية سليمة','Import a valid backup')}</button><button class="btn o w" data-recovery="restore">${T('البحث عن نسخة حماية محفوظة واسترجاعها','Find and restore a protected snapshot')}</button><button class="btn o w" data-recovery="retry">${T('إعادة المحاولة','Retry')}</button>${BOOT_RAW!==null?`<button class="btn o w" data-recovery="reset">${T('بدء جديد بعد حفظ نسخة من البيانات القديمة','Start fresh after preserving old data')}</button>`:`<button class="btn w" data-recovery="start" ${BOOT_READ_FAILED?'disabled':''}>${T('بدء استخدام جديد (لا توجد بيانات محلية مقروءة)','Start fresh (no readable local data)')}</button>`}`;}
 
  let ND=null;
+let noteQuery='';
 
 function openNoteSheet(){
  ND={
