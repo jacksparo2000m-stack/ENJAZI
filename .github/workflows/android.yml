@@ -5,8 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-
+  contents: write
 jobs:
   apk:
     runs-on: ubuntu-latest
