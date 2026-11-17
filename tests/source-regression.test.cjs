@@ -103,7 +103,7 @@ test('notepad cards open existing notes for editing', () => {
   assert.match(html, /else S\.notes\[index\]=note/);
 });
 test('notepad navigation renders the notes page and escapes note titles', () => {
-  const start = html.indexOf('function notesView(){');
+  const start = html.indexOf('function notesListView(){');
   const end = html.indexOf('function render()', start);
 
   assert.ok(start >= 0 && end > start);
