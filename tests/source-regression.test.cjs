@@ -36,6 +36,8 @@ test('task subject association is independent from legacy lecture link', () => {
 
 test('subject deletion unlinks associated tasks without deleting them', () => {
   assert.match(html, /const unlinkItems=\(groupId,items\)=>\{[\s\S]*?if\(x\.lk&&keys\.has\(x\.lk\)\)x\.lk='';[\s\S]*?if\(x\.subjectId&&ids\.has\(x\.subjectId\)\)x\.subjectId='';[\s\S]*?\};/);
+    // Deleting a subject also unlinks its notes without deleting them.
+  assert.match(html, /S\.tasks\.forEach\(x=>\{[\s\S]*?\}\);\s*S\.notes\.forEach\(n=>\{\s*if\(n\.subjectId&&ids\.has\(n\.subjectId\)\)n\.subjectId='';\s*\}\);/);
 
   assert.match(html, /di:\(\)=>\{[\s\S]*?unlinkItems\(P\.g,\[item\]\);[\s\S]*?G\.it=G\.it\.filter\(a=>a\.id!==P\.i\);/);
 
