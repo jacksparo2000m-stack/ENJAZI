@@ -145,6 +145,30 @@ test('notepad filters notes by selected subject', () => {
   assert.match(html, /e\.target\.id==='noteSubjectFilter'[\s\S]*?noteSubjectFilter=e\.target\.value[\s\S]*?notesListView\(\)/);
 });
 
+test('notepad create and edit forms support subject association', () => {
+  const createStart = html.indexOf('function openNoteSheet(){');
+  const editStart = html.indexOf('function editNoteSheet(id){');
+  const listStart = html.indexOf('function notesListView(){');
+
+  assert.ok(createStart >= 0 && editStart > createStart);
+  assert.ok(listStart > editStart);
+
+  const createForm = html.slice(createStart, editStart);
+  const editForm = html.slice(editStart, listStart);
+
+  // Create form supports optional subject selection.
+  assert.match(createForm, /id="noteSubject"/);
+  assert.match(createForm, /S\.groups\.flatMap\(g=>g\.it\)/);
+
+  // Edit form restores the currently selected subject.
+  assert.match(editForm, /id="noteSubject"/);
+  assert.match(editForm, /ND\.subjectId===i\.id\?'selected':''/);
+
+  // Save handler persists the selected subject ID.
+  assert.match(html, /const subjectId=\$\('#noteSubject'\)\.value/);
+  assert.match(html, /const note=\{\.\.\.ND,title,content,subjectId,updatedAt:Date\.now\(\)\}/);
+});
+
 
 test('notepad create and cancel handlers preserve safe save behavior', () => {
   // New note button opens the note form.
