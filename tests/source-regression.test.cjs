@@ -135,6 +135,17 @@ test('notepad search filters note titles and content while typing', () => {
   assert.match(html, /e\.target\.id==='noteSearch'[\s\S]*?noteQuery=e\.target\.value[\s\S]*?notesListView\(\)/);
 });
 
+
+test('notepad filters notes by selected subject', () => {
+  assert.match(html, /let noteSubjectFilter='';/);
+  assert.match(html, /id="noteSubjectFilter"/);
+  assert.match(html, /S\.groups\.flatMap\(g=>g\.it\)/);
+  assert.match(html, /const subjectNotes=noteSubjectFilter[\s\S]*?allNotes\.filter\(n=>n\.subjectId===noteSubjectFilter\)/);
+  assert.match(html, /subjectNotes\.filter\(n=>\(n\.title\+' '\+\(n\.content\|\|''\)\)\.toLowerCase\(\)\.includes\(q\)\)/);
+  assert.match(html, /e\.target\.id==='noteSubjectFilter'[\s\S]*?noteSubjectFilter=e\.target\.value[\s\S]*?notesListView\(\)/);
+});
+
+
 test('notepad create and cancel handlers preserve safe save behavior', () => {
   // New note button opens the note form.
   assert.match(html, /nn: *\(\)=>openNoteSheet\(\)/);
