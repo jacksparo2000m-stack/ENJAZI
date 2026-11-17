@@ -313,6 +313,11 @@ function editNoteSheet(id){
 
    <label>${T('المحتوى','Content')}</label>
    <textarea id="nc" rows="8">${E(ND.content)}</textarea>
+   <label>${T('المادة المرتبطة (اختياري)','Related subject (optional)')}</label>
+<select id="noteSubject" class="in">
+ <option value="">${T('بدون مادة','No subject')}</option>
+ ${S.groups.flatMap(g=>g.it).map(i=>`<option value="${E(i.id)}" ${ND.subjectId===i.id?'selected':''}>${E(i.n)}</option>`).join('')}
+</select>
 
    <div class="two" style="margin-top:16px">
     <button class="btn o" data-a="nclose">
