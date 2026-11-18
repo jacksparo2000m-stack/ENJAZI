@@ -189,7 +189,38 @@ let backupDbPromise=null,saveQueue=Promise.resolve(),backupSequence=0,BOOTING=tr
 const sortBackups=(a,b)=>b.createdAt-a.createdAt||String(b.id).localeCompare(String(a.id));
 const backupHash=raw=>{let h=2166136261;for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(16).padStart(8,'0')};
 function backupDB(){if(!('indexedDB'in window))return Promise.reject(new Error('IndexedDB is unavailable'));if(backupDbPromise)return backupDbPromise;backupDbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open(BACKUP_DB,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(BACKUP_STORE))db.createObjectStore(BACKUP_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>{backupDbPromise=null;reject(req.error||new Error('Could not open backup database'))};req.onblocked=()=>{backupDbPromise=null;reject(new Error('Backup database upgrade is blocked'))}});return backupDbPromise}
-async function backupStore(raw){if(typeof raw!=='string'||!raw)return false;let data;try{data=JSON.parse(raw)}catch(e){throw new Error('Backup source is not valid JSON')}const invalid=vld(data);if(invalid)throw new Error('Backup source failed validation: '+invalid);const db=await backupDB(),id=String(Date.now()).padStart(13,'0')+'-'+String(++backupSequence).padStart(8,'0')+'-'+Math.random().toString(36).slice(2,8),record={id,createdAt:Date.now(),schema:1,raw,checksum:backupHash(raw)};await new Promise((resolve,reject)=>{const tx=db.transaction(BACKUP_STORE,'readwrite'),store=tx.objectStore(BACKUP_STORE),all=store.getAll();all.onsuccess=()=>{const rows=(all.result||[]).sort(sortBackups),duplicate=rows.some(x=>x.checksum===record.checksum&&x.raw===raw);if(!duplicate){store.put(record);rows.concat(record).sort(sortBackups).slice(BACKUP_LIMIT).forEach(x=>store.delete(x.id))}};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Backup transaction failed'));tx.onabort=()=>reject(tx.error||new Error('Backup transaction aborted'))});return true}
+
+async function backupStore(raw,source='automatic'){
+ if(typeof raw!=='string'||!raw)return false;
+ const validSources=['automatic','pre-import','pre-restore','recovery','migration'];
+ if(!validSources.includes(source))source='automatic';
+ let data;
+ try{data=JSON.parse(raw)}
+ catch(e){throw new Error('Backup source is not valid JSON')}
+ const invalid=vld(data);
+ if(invalid)throw new Error('Backup source failed validation: '+invalid);
+ const db=await backupDB();
+ const id=String(Date.now()).padStart(13,'0')+'-'+String(++backupSequence).padStart(8,'0')+'-'+Math.random().toString(36).slice(2,8);
+ const record={id,createdAt:Date.now(),schema:1,raw,checksum:backupHash(raw),source};
+ await new Promise((resolve,reject)=>{
+  const tx=db.transaction(BACKUP_STORE,'readwrite');
+  const store=tx.objectStore(BACKUP_STORE);
+  const all=store.getAll();
+  all.onsuccess=()=>{
+   const rows=(all.result||[]).sort(sortBackups);
+   const duplicate=rows.some(x=>x.checksum===record.checksum&&x.raw===raw);
+   if(!duplicate){
+    store.put(record);
+    rows.concat(record).sort(sortBackups).slice(BACKUP_LIMIT).forEach(x=>store.delete(x.id));
+   }
+  };
+  tx.oncomplete=resolve;
+  tx.onerror=()=>reject(tx.error||new Error('Backup transaction failed'));
+  tx.onabort=()=>reject(tx.error||new Error('Backup transaction aborted'));
+ });
+ return true;
+}
+
 async function backupList(){const db=await backupDB();return new Promise((resolve,reject)=>{const tx=db.transaction(BACKUP_STORE,'readonly'),req=tx.objectStore(BACKUP_STORE).getAll();req.onsuccess=()=>resolve((req.result||[]).sort(sortBackups));req.onerror=()=>reject(req.error||new Error('Could not read backups'))})}
 async function restoreBackupRecord(record){return enqueueSaveOperation(async()=>{if(!record||typeof record.raw!=='string'||record.checksum!==backupHash(record.raw))throw new Error('Backup integrity check failed');const data=JSON.parse(record.raw),invalid=vld(data);if(invalid)throw new Error(invalid);const next=JSON.parse(JSON.stringify(data));mig(next);const postError=vld(next);if(postError)throw new Error(postError);const payload=JSON.stringify(next),currentRaw=localStorage.getItem(K);if(currentRaw!==null){const rawKey=K+'_pre_restore_'+Date.now();localStorage.setItem(rawKey,currentRaw);if(localStorage.getItem(rawKey)!==currentRaw)throw new Error('Pre-restore raw backup verification failed');try{if(currentRaw!==LAST_GOOD_RAW&&!vld(JSON.parse(currentRaw)))await backupStore(currentRaw)}catch(e){console.warn('Current state was preserved as raw data but not added to validated snapshots:',e)}}if(LAST_GOOD_RAW&&LAST_GOOD_RAW!==payload&&LAST_GOOD_RAW!==currentRaw)await backupStore(LAST_GOOD_RAW);localStorage.setItem(K,payload);if(localStorage.getItem(K)!==payload)throw new Error('Restored data verification failed');LAST_GOOD_RAW=payload;S=next;BOOT_RAW=payload;BOOT_DATA=next;RECOVERY=false;SAVE_FAILED=false;BOOT_ERROR='';BOOT_READ_FAILED=false;render();toast(T('تم استرجاع النسخة الاحتياطية بنجاح','Backup restored successfully'))});}
 const enqueueSaveOperation=work=>{const result=saveQueue.then(work,work);saveQueue=result.then(()=>{},()=>{});return result};
