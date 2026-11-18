@@ -9,7 +9,7 @@ const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
 
-function fakeIndexedDB() {
+function fakeIndexedDB(options = {}) {
   const records = new Map();
 
   const clone = value =>
@@ -86,7 +86,7 @@ function fakeIndexedDB() {
               const request = {};
 
               queue.push(() => {
-                request.result = clone(working.get(key));
+                request.result = clone(working.get(key));  if (options.corruptReadback && request.result) {   request.result.checksum = 'corrupted-readback'; }  if (options.corruptReadback && request.result) {   request.result.checksum = 'corrupted-readback'; }
                 request.onsuccess?.();
               });
 
