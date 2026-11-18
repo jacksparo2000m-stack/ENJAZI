@@ -917,7 +917,7 @@ async function bootState(){
 
   if(migrated!==BOOT_RAW){
    try{
-    await backupStore(BOOT_RAW,'recovery');
+    await backupStore(BOOT_RAW,'migration');
     trace('before storage write',migrated);
 
     localStorage.setItem(K,migrated);
