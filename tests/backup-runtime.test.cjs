@@ -727,4 +727,98 @@ test('backup snapshots preserve their source labels', async () => {
   assert.ok(rows.some(x => x.source === 'pre-restore'));
 });
 
+test('import preserves the current raw data when IndexedDB pre-import backup fails', async () => {
+  const start = html.indexOf("$('#imp').addEventListener('change'");
+  const end = html.indexOf("document.addEventListener('keydown'", start);
 
+  assert.ok(start >= 0 && end > start, 'import handler should exist');
+
+  const source = html.slice(start, end);
+
+  const oldRaw = JSON.stringify({
+    lang: 'ar',
+    tasks: [],
+    groups: [{ id: 'old-group', n: 'Old', it: [] }]
+  });
+
+  const imported = {
+    lang: 'ar',
+    tasks: [],
+    groups: [{ id: 'new-group', n: 'New', it: [] }]
+  };
+
+  const values = new Map([['pt2', oldRaw]]);
+  const localStorage = {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    }
+  };
+
+  const input = {
+    files: [{ size: 100 }],
+    value: ''
+  };
+
+  let reader;
+  let backupArgs;
+
+  class FakeFileReader {
+    constructor() {
+      reader = this;
+      this.result = JSON.stringify(imported);
+    }
+    readAsText() {}
+  }
+
+  const context = {
+    $: () => input,
+    FileReader: FakeFileReader,
+    localStorage,
+    K: 'pt2',
+    S: JSON.parse(oldRaw),
+    RECOVERY: false,
+    SAVE_FAILED: false,
+    LAST_GOOD_RAW: oldRaw,
+    BOOT_RAW: oldRaw,
+    BOOT_DATA: JSON.parse(oldRaw),
+    BOOT_ERROR: '',
+    BOOT_READ_FAILED: false,
+    vld: () => '',
+    mig() {},
+    T: (ar, en) => ar,
+    toast() {},
+    confirm: () => true,
+    console,
+    JSON,
+    Promise,
+    Date,
+    clearTimeout() {},
+    save: { t: null },
+    enqueueSaveOperation: work => Promise.resolve().then(work),
+    backupStore: async (...args) => {
+      backupArgs = args;
+      throw new Error('Simulated IndexedDB backup failure');
+    },
+    render() {},
+    LN: null
+  };
+
+  vm.runInNewContext(source, context);
+
+    await reader.onload();
+
+  assert.equal(backupArgs[0], oldRaw);
+  assert.equal(backupArgs[1], 'pre-import');
+
+  assert.equal(localStorage.getItem('pt2'), JSON.stringify(imported));
+
+  const preservedKey = [...values.keys()].find(
+    key => key.startsWith('pt2_preimport_')
+  );
+
+  assert.ok(preservedKey, 'raw pre-import backup key should exist');
+  assert.equal(localStorage.getItem(preservedKey), oldRaw);
+});
