@@ -10,9 +10,19 @@
 - Backup runtime tests: `tests/backup-runtime.test.cjs`
 - Android workflow: `.github/workflows/android.yml`
 - Latest branch snapshot checked while preparing this reference:
-  - `index.html` blob SHA: `3a7eedb41e936183ce8976b8df2c3cfcb5bdd831`
-  - `tests/backup-runtime.test.cjs` blob SHA: `b03ca9ba1a021b032b65c26b19ba5f7a40a607d5`
-- Latest verified release in the current handover context: `v1.146`, workflow run #146 completed successfully. Verify GitHub Actions and Releases before claiming any newer release exists.
+index.html blob SHA:
+8d77dce00457206da1d9e5ffbd17835a489bdc8b
+
+tests/backup-runtime.test.cjs blob SHA:
+0b3df1c5916f64fe7ab616ba666a7d569461386e
+
+Latest verified release: v1.160
+Workflow run: #160
+Run ID: 44248951033
+Commit: 9162ea1d4e772f17524b67e9fba32351225cdc46
+Workflow conclusion: success
+Tests: 45 passed, 0 failed
+
 
 ### Collaboration rules
 
@@ -76,20 +86,42 @@ Older snapshots may not have a source field. Do not falsely infer their historic
 
 Known design consideration: duplicate suppression may skip creating a new record when identical raw data already exists, retaining the earlier record's source. Do not change this without deciding whether source should represent the original snapshot or multiple reasons/sources.
 
-## 4. Immediate active task
+## 4. Current status — backupStore audit
 
-**Review and strengthen `backupStore` and its automated tests. No implementation change for this task has yet been verified.**
+Status: IMPLEMENTATION AND AUTOMATED TESTS VERIFIED.
 
-Acceptance goals to inspect against the actual code:
-1. Validate candidate raw JSON and schema before storage.
-2. Write the snapshot using an IndexedDB transaction.
-3. Read the stored record back and verify raw content, checksum, schema, and source.
-4. Only after successful verification, prune old records so no more than the newest 10 valid snapshots remain.
-5. Ensure failed write/readback/verification cannot delete previously valid snapshots. Prefer atomic write + readback + pruning in one transaction where IndexedDB semantics permit it.
-6. Define and test duplicate-raw behavior, including a store that already contains more than 10 records.
-7. Test ordering and unique IDs; timestamps alone may not be unique.
+Verified in the live repository:
+1. Candidate raw JSON and schema are validated before storage.
+2. Snapshot writes use an IndexedDB readwrite transaction.
+3. Stored snapshots are read back and checked for ID, raw content,
+   checksum, schema, and source.
+4. Pruning occurs only after successful readback verification.
+5. Write/readback failure aborts the transaction and preserves
+   previously valid snapshots.
+6. Retention keeps the newest 10 valid snapshots across all sources.
+7. Corrupt snapshots are excluded from retention and are not
+   automatically deleted.
+8. Legacy snapshots without a source field remain valid.
+9. Duplicate raw content does not consume an additional retention slot.
+10. Snapshot IDs use a sequence component plus a random component.
 
-These are acceptance goals, not claims that the current code already meets them. Inspect the complete current `backupStore`, `backupList`, transaction helpers, and related tests before suggesting edits. Check whether the test IndexedDB mock accurately models transaction completion, abort, and rollback; improve the mock if necessary.
+Automated verification:
+- Workflow run #160 succeeded.
+- 45 tests passed; 0 failed.
+- The new retention test passed.
+- APK identity, signing, and packaged web assets verified.
+- Release v1.160 published successfully.
+
+Remaining Phase 1 work:
+- Review ordinary-save backup behavior.
+- Review import preservation and backup behavior.
+- Review restore preservation and verification.
+- Review migration and recovery backup paths.
+- Confirm diagnostics remain read-only.
+
+Do not mark Phase 1 complete until all remaining paths are reviewed
+and verified.
+
 
 ## 5. Product roadmap — all agreed goals
 
