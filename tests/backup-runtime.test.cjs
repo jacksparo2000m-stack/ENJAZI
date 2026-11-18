@@ -8,43 +8,208 @@ const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
+
 function fakeIndexedDB() {
   const records = new Map();
+
+  const clone = value =>
+    value && typeof value === 'object'
+      ? { ...value }
+      : value;
+
   const db = {
     stores: new Map(),
-    objectStoreNames: { contains: name => db.stores.has(name) },
-    createObjectStore(name) { db.stores.set(name, records); return {}; },
-    transaction(name) {
-      const tx = { error: null, oncomplete: null, onerror: null, onabort: null };
+
+    objectStoreNames: {
+      contains: name => db.stores.has(name)
+    },
+
+    createObjectStore(name) {
+      db.stores.set(name, records);
+      return {};
+    },
+
+    transaction(name, mode = 'readonly') {
       const data = db.stores.get(name);
-      if (!data) throw new Error('Missing object store: ' + name);
-      tx.objectStore = () => ({
-        getAll() {
-          const request = {};
+
+      if (!data) {
+        throw new Error('Missing object store: ' + name);
+      }
+
+      const writable = mode === 'readwrite';
+      const working = new Map(
+        [...data.entries()].map(([key, value]) => [
+          key,
+          clone(value)
+        ])
+      );
+
+      const queue = [];
+
+      let aborted = false;
+      let completed = false;
+      let pumpScheduled = false;
+      let finishScheduled = false;
+
+      const tx = {
+        error: null,
+        oncomplete: null,
+        onerror: null,
+        onabort: null,
+
+        abort() {
+          if (aborted || completed) return;
+
+          aborted = true;
+          queue.length = 0;
+
           queueMicrotask(() => {
-            request.result = [...data.values()].map(value => ({ ...value }));
-            request.onsuccess?.();
-            queueMicrotask(() => tx.oncomplete?.());
+            tx.onabort?.();
           });
-          return request;
         },
-        put(value) { data.set(value.id, { ...value }); },
-        delete(id) { data.delete(id); }
-      });
+
+        objectStore() {
+          return {
+            getAll() {
+              const request = {};
+
+              queue.push(() => {
+                request.result = [...working.values()].map(clone);
+                request.onsuccess?.();
+              });
+
+              schedulePump();
+              return request;
+            },
+
+            get(key) {
+              const request = {};
+
+              queue.push(() => {
+                request.result = clone(working.get(key));
+                request.onsuccess?.();
+              });
+
+              schedulePump();
+              return request;
+            },
+
+            put(value) {
+              if (!writable) {
+                throw new Error('Transaction is readonly');
+              }
+
+              const request = {};
+
+              queue.push(() => {
+                if (!value || value.id == null) {
+                  throw new Error('Missing snapshot key');
+                }
+
+                working.set(value.id, clone(value));
+                request.result = value.id;
+                request.onsuccess?.();
+              });
+
+              schedulePump();
+              return request;
+            },
+
+            delete(key) {
+              if (!writable) {
+                throw new Error('Transaction is readonly');
+              }
+
+              const request = {};
+
+              queue.push(() => {
+                working.delete(key);
+                request.result = undefined;
+                request.onsuccess?.();
+              });
+
+              schedulePump();
+              return request;
+            }
+          };
+        }
+      };
+
+      function schedulePump() {
+        if (pumpScheduled || aborted || completed) return;
+
+        pumpScheduled = true;
+
+        queueMicrotask(() => {
+          pumpScheduled = false;
+
+          if (aborted || completed) return;
+
+          const operation = queue.shift();
+
+          if (operation) {
+            try {
+              operation();
+            } catch (error) {
+              tx.error = error;
+              tx.abort();
+              return;
+            }
+
+            schedulePump();
+            return;
+          }
+
+          scheduleFinish();
+        });
+      }
+
+      function scheduleFinish() {
+        if (finishScheduled || aborted || completed) return;
+
+        finishScheduled = true;
+
+        queueMicrotask(() => {
+          finishScheduled = false;
+
+          if (aborted || completed) return;
+
+          if (queue.length) {
+            schedulePump();
+            return;
+          }
+
+          if (writable) {
+            data.clear();
+
+            for (const [key, value] of working) {
+              data.set(key, clone(value));
+            }
+          }
+
+          completed = true;
+          tx.oncomplete?.();
+        });
+      }
+
       return tx;
     }
   };
+
   const api = {
     open() {
       const request = {};
+
       queueMicrotask(() => {
         request.result = db;
         request.onupgradeneeded?.();
         request.onsuccess?.();
       });
+
       return request;
     }
   };
+
   return { api, records };
 }
 
