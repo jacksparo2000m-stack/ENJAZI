@@ -255,6 +255,48 @@ test('IndexedDB snapshot store retains the newest ten distinct valid versions', 
   assert.notEqual(helpers.backupHash('abc'), helpers.backupHash('abd'));
 });
 
+test('fake IndexedDB readwrite transactions roll back on abort', async () => {
+  const fake = fakeIndexedDB();
+
+  const db = await new Promise((resolve, reject) => {
+    const request = fake.api.open();
+
+    request.onerror = () => reject(request.error);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore('snapshots');
+    };
+
+    request.onsuccess = () => resolve(request.result);
+  });
+
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('snapshots', 'readwrite');
+
+    tx.oncomplete = () => {
+      reject(new Error('Aborted transaction must not complete'));
+    };
+
+    tx.onabort = resolve;
+
+    tx.objectStore('snapshots').put({
+      id: 'temporary',
+      raw: 'test-data'
+    }).onsuccess = () => {
+      tx.abort();
+    };
+  });
+
+  const rows = await new Promise((resolve, reject) => {
+    const tx = db.transaction('snapshots', 'readonly');
+    const request = tx.objectStore('snapshots').getAll();
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  assert.deepEqual(rows, []);
+});
 test('save-operation queue executes mutations, imports, and restores in strict order', async () => {
   const source = `let saveQueue=Promise.resolve();const enqueueSaveOperation=work=>{const result=saveQueue.then(work,work);saveQueue=result.then(()=>{},()=>{});return result};({enqueueSaveOperation})`;
   const { enqueueSaveOperation } = vm.runInNewContext(source, { Promise });
