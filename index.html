@@ -333,30 +333,7 @@ function verifyAndPrune(saved){
  }catch(e){
   fail(e);
  }
-
-    function verifyAndPrune(saved){
- try{
-  if(
-   !isValidSnapshot(saved)||
-   saved.id!==targetId||
-   saved.raw!==raw||
-   (!duplicate&&saved.source!==record.source)
-  ){
-   fail('Backup readback verification failed');
-   return;
-  }
-
-  const verifiedRows=validRows.filter(x=>x.id!==targetId);
-  verifiedRows.push(saved);
-
-  verifiedRows
-   .sort(sortBackups)
-   .slice(BACKUP_LIMIT)
-   .forEach(x=>store.delete(x.id));
- }catch(e){
-  fail(e);
- }
-}
+ 
  });
 
  return true;
