@@ -757,11 +757,14 @@ test('import preserves the current raw data when IndexedDB pre-import backup fai
     }
   };
 
-  const input = {
+    const input = {
     files: [{ size: 100 }],
-    value: ''
+    value: '',
+    addEventListener(event, handler) {
+      this.handler = handler;
+    }
   };
-
+  
   let reader;
   let backupArgs;
 
@@ -806,10 +809,10 @@ test('import preserves the current raw data when IndexedDB pre-import backup fai
     LN: null
   };
 
-  vm.runInNewContext(source, context);
+    vm.runInNewContext(source, context);
 
-    await reader.onload();
-
+  input.handler({ target: input });
+  await reader.onload();
   assert.equal(backupArgs[0], oldRaw);
   assert.equal(backupArgs[1], 'pre-import');
 
