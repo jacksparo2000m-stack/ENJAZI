@@ -259,6 +259,116 @@ test('IndexedDB snapshot store retains the newest ten distinct valid versions', 
   assert.notEqual(helpers.backupHash('abc'), helpers.backupHash('abd'));
 });
 
+
+test('backupStore retains ten valid snapshots without pruning corrupt or legacy records', async () => {
+  const start = html.indexOf("const BACKUP_DB='enjazi-data-protection'");
+  const end = html.indexOf('async function restoreBackupRecord', start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const source = html.slice(start, end) +
+    '\n;({ backupStore, backupList, backupHash })';
+
+  const fake = fakeIndexedDB();
+
+  const context = {
+    window: { indexedDB: fake.api },
+    indexedDB: fake.api,
+    vld: () => '',
+    console,
+    Date,
+    Math,
+    Promise,
+    JSON,
+    String,
+    Number,
+    Object,
+    Array,
+    Error,
+    setTimeout,
+    clearTimeout
+  };
+
+  const helpers = vm.runInNewContext(source, context);
+
+  for (let version = 1; version <= 11; version++) {
+    const raw = JSON.stringify({ version });
+
+    const record = {
+      id: `valid-${version}`,
+      createdAt: version,
+      schema: 1,
+      raw,
+      checksum: helpers.backupHash(raw)
+    };
+
+    if (version !== 11) {
+      record.source = 'automatic';
+    }
+
+    fake.records.set(record.id, record);
+  }
+
+  const malformedRaw = '{';
+
+  fake.records.set('corrupt-json', {
+    id: 'corrupt-json',
+    createdAt: 100,
+    schema: 1,
+    raw: malformedRaw,
+    checksum: helpers.backupHash(malformedRaw),
+    source: 'automatic'
+  });
+
+  fake.records.set('corrupt-checksum', {
+    id: 'corrupt-checksum',
+    createdAt: 101,
+    schema: 1,
+    raw: '{"version":99}',
+    checksum: 'wrong-checksum',
+    source: 'automatic'
+  });
+
+  await helpers.backupStore(JSON.stringify({ version: 12 }));
+
+  const rows = await helpers.backupList();
+
+  const validRows = rows.filter(record => {
+    try {
+      return record.schema === 1 &&
+        record.checksum === helpers.backupHash(record.raw) &&
+        !JSON.parse(record.raw).invalid;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  assert.equal(validRows.length, 10);
+
+  assert.ok(
+    validRows.some(record => record.id === 'valid-11'),
+    'legacy snapshots without source should remain valid'
+  );
+
+  assert.ok(
+    validRows.some(record => JSON.parse(record.raw).version === 12)
+  );
+
+  assert.ok(!fake.records.has('valid-1'));
+  assert.ok(!fake.records.has('valid-2'));
+
+  assert.ok(
+    fake.records.has('corrupt-json'),
+    'corrupt JSON snapshots must not be automatically deleted'
+  );
+
+  assert.ok(
+    fake.records.has('corrupt-checksum'),
+    'snapshots with invalid checksums must not be automatically deleted'
+  );
+});
+
+
 test('fake IndexedDB readwrite transactions roll back on abort', async () => {
   const fake = fakeIndexedDB();
 
