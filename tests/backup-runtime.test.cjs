@@ -212,3 +212,51 @@ test('backup failure does not undo a verified primary save', async () => {
   assert.equal(harness.context.SAVE_FAILED, false);
 });
 
+
+test('backup snapshots preserve their source labels', async () => {
+  const start = html.indexOf("const BACKUP_DB='enjazi-data-protection'");
+  const end = html.indexOf('async function restoreBackupRecord', start);
+  assert.ok(start >= 0 && end > start);
+
+  const source = html.slice(start, end) +
+    '\n;({ backupStore, backupList })';
+
+  const fake = fakeIndexedDB();
+  const context = {
+    window: { indexedDB: fake.api },
+    indexedDB: fake.api,
+    vld: () => '',
+    console,
+    Date,
+    Math,
+    Promise,
+    JSON,
+    String,
+    Number,
+    Object,
+    Array,
+    Error,
+    setTimeout,
+    clearTimeout
+  };
+
+  const helpers = vm.runInNewContext(source, context);
+
+  await helpers.backupStore(
+    JSON.stringify({ version: 1 }),
+    'pre-import'
+  );
+
+  await helpers.backupStore(
+    JSON.stringify({ version: 2 }),
+    'pre-restore'
+  );
+
+  const rows = await helpers.backupList();
+
+  assert.equal(rows.length, 2);
+  assert.ok(rows.some(x => x.source === 'pre-import'));
+  assert.ok(rows.some(x => x.source === 'pre-restore'));
+});
+
+
