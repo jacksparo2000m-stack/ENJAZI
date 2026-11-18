@@ -169,7 +169,15 @@ Work in this order unless the user explicitly changes priorities.
 
 ## 7. Change log
 
-### 2026-11-18 — Reference document prepared
-- Prepared this master handover reference for the `fix/primary-storage-before-backup` branch.
-- Captured known architecture, user-data facts, backup policy, active task, and agreed roadmap.
-- The `backupStore` readback/atomic-pruning review remains pending and must be verified against the live repository before implementation.
+### 2026-11-18 — backupStore audit verified
+- Verified backupStore validation, IndexedDB transaction handling,
+  readback verification, atomic pruning, and 10-valid-snapshot retention.
+- Confirmed corrupt snapshots are not automatically deleted and
+  legacy snapshots remain supported.
+- GitHub Actions run #160 succeeded.
+- Automated tests: 45 passed, 0 failed.
+- APK identity, signing, and packaged web assets verified.
+- Release v1.160 published successfully.
+- Updated Sections 1 and 4 with verified repository and release status.
+- Phase 1 remains open: ordinary save, import, restore, migration,
+  recovery, and read-only diagnostics still require review.
