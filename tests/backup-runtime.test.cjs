@@ -913,3 +913,110 @@ test('completed linked tasks preserve and display their descriptions in subject 
   );
 });
 
+
+test('import aborts before replacing current data when raw pre-import preservation fails', async () => {
+  const start = html.indexOf("$('#imp').addEventListener('change'");
+  const end = html.indexOf("document.addEventListener('keydown'", start);
+
+  assert.ok(start >= 0 && end > start, 'import handler should exist');
+
+  const source = html.slice(start, end);
+
+  const oldRaw = JSON.stringify({
+    lang: 'ar',
+    tasks: [],
+    groups: [{ id: 'old-group', n: 'Old', it: [] }]
+  });
+
+  const imported = {
+    lang: 'ar',
+    tasks: [],
+    groups: [{ id: 'new-group', n: 'New', it: [] }]
+  };
+
+  const values = new Map([['pt2', oldRaw]]);
+  let rawBackupAttempted = false;
+  let importedWriteAttempted = false;
+  let reader;
+
+  const localStorage = {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      if (key.startsWith('pt2_preimport_')) {
+        rawBackupAttempted = true;
+        throw new Error('Simulated raw preservation failure');
+      }
+
+      if (key === 'pt2') {
+        importedWriteAttempted = true;
+      }
+
+      values.set(key, String(value));
+    }
+  };
+
+  const input = {
+    files: [{ size: 100 }],
+    value: '',
+    addEventListener(event, handler) {
+      this.handler = handler;
+    }
+  };
+
+  class FakeFileReader {
+    constructor() {
+      reader = this;
+      this.result = JSON.stringify(imported);
+    }
+    readAsText() {}
+  }
+
+  const context = {
+    $: () => input,
+    FileReader: FakeFileReader,
+    localStorage,
+    K: 'pt2',
+    S: JSON.parse(oldRaw),
+    RECOVERY: false,
+    SAVE_FAILED: false,
+    LAST_GOOD_RAW: oldRaw,
+    BOOT_RAW: oldRaw,
+    BOOT_DATA: JSON.parse(oldRaw),
+    BOOT_ERROR: '',
+    BOOT_READ_FAILED: false,
+    vld: () => '',
+    mig() {},
+    T: (ar, en) => ar,
+    toast() {},
+    confirm: () => true,
+    console,
+    JSON,
+    Promise,
+    Date,
+    clearTimeout() {},
+    save: { t: null },
+    enqueueSaveOperation: work => Promise.resolve().then(work),
+    backupStore: async () => {
+      throw new Error('Simulated IndexedDB backup failure');
+    },
+    render() {},
+    LN: null
+  };
+
+  vm.runInNewContext(source, context);
+
+  input.handler({ target: input });
+  await reader.onload();
+
+  assert.equal(rawBackupAttempted, true);
+  assert.equal(importedWriteAttempted, false);
+  assert.equal(
+    localStorage.getItem('pt2'),
+    oldRaw,
+    'current data must remain unchanged when raw preservation fails'
+  );
+});
+
+
