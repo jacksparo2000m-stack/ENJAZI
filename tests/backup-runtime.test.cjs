@@ -86,7 +86,11 @@ function fakeIndexedDB(options = {}) {
               const request = {};
 
               queue.push(() => {
-                request.result = clone(working.get(key));  if (options.corruptReadback && request.result) {   request.result.checksum = 'corrupted-readback'; }  if (options.corruptReadback && request.result) {   request.result.checksum = 'corrupted-readback'; }
+                request.result = clone(working.get(key));
+
+if (options.corruptReadback && request.result) {
+  request.result.checksum = 'corrupted-readback';
+}
                 request.onsuccess?.();
               });
 
