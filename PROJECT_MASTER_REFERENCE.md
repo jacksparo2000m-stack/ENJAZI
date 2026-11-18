@@ -195,3 +195,33 @@ Work in this order unless the user explicitly changes priorities.
 - Updated Sections 1 and 4 with verified repository and release status.
 - Phase 1 remains open: ordinary save, import, restore, migration,
   recovery, and read-only diagnostics still require review.
+
+
+
+### 2026-11-18 — Achievement log description feature verified
+
+Problem:
+- Completing a task linked to a subject displayed only the task title in the subject achievement log.
+- The task description was not preserved in the achievement log.
+
+Implementation in `index.html`:
+- `lkd()` now saves the task description in the subject log entry.
+- `logDescription()` reads the saved description and supports legacy entries by falling back to the original task description when available.
+- `track()` displays the description under the achievement title.
+- `vld()` validates the optional description with a maximum length of 10,000 characters.
+
+Automated test coverage added in `tests/backup-runtime.test.cjs`:
+- Verifies that completing a task stores its description in the subject log.
+- Verifies that the saved description remains available after the original task is removed.
+- Verifies legacy fallback to the original task description.
+- Verifies that the achievement log view contains description-rendering markup.
+
+Verification:
+- GitHub Actions run #169 succeeded.
+- Release v1.169 was published successfully.
+- Exact automated test count was not independently verified.
+
+Important status distinction:
+- This achievement-log feature is a separate product improvement.
+- It does NOT mean Phase 1 Data Protection is complete.
+- Import, restore, migration, recovery, and read-only diagnostics still require their planned reviews and verification.
