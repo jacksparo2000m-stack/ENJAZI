@@ -335,33 +335,28 @@ function verifyAndPrune(saved){
  }
 
     function verifyAndPrune(saved){
-     try{
-      if(
-       !saved||
-       saved.id!==targetId||
-       saved.schema!==1||
-       saved.raw!==raw||
-       saved.checksum!==backupHash(raw)
-      ){
-       fail('Backup readback verification failed');
-       return;
-      }
+ try{
+  if(
+   !isValidSnapshot(saved)||
+   saved.id!==targetId||
+   saved.raw!==raw||
+   (!duplicate&&saved.source!==record.source)
+  ){
+   fail('Backup readback verification failed');
+   return;
+  }
 
-      const verifiedRows=rows.filter(x=>x&&x.id!==targetId);
-      verifiedRows.push(saved);
+  const verifiedRows=validRows.filter(x=>x.id!==targetId);
+  verifiedRows.push(saved);
 
-      verifiedRows
-       .sort(sortBackups)
-       .slice(BACKUP_LIMIT)
-       .forEach(x=>store.delete(x.id));
-     }catch(e){
-      fail(e);
-     }
-    }
-   }catch(e){
-    fail(e);
-   }
-  };
+  verifiedRows
+   .sort(sortBackups)
+   .slice(BACKUP_LIMIT)
+   .forEach(x=>store.delete(x.id));
+ }catch(e){
+  fail(e);
+ }
+}
  });
 
  return true;
