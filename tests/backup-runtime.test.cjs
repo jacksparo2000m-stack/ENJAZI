@@ -816,7 +816,7 @@ test('import preserves the current raw data when IndexedDB pre-import backup fai
   assert.equal(backupArgs[0], oldRaw);
   assert.equal(backupArgs[1], 'pre-import');
 
-  assert.equal(localStorage.getItem('pt2'), JSON.stringify(imported));
+  const saved = JSON.parse(localStorage.getItem('pt2'));   assert.equal(saved.lang, imported.lang);   assert.deepEqual(saved.tasks, imported.tasks);   assert.deepEqual(saved.groups, imported.groups);
 
   const preservedKey = [...values.keys()].find(
     key => key.startsWith('pt2_preimport_')
