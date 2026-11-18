@@ -778,7 +778,7 @@ $('#imp').addEventListener('change',e=>{
    save.t=null;
 
    const currentRaw=localStorage.getItem(K);
-   if(currentRaw!==null){try{const parsedCurrent=JSON.parse(currentRaw);if(!vld(parsedCurrent))await backupStore(currentRaw,'pre-restore')}catch(backupError){console.warn('Current state could not be added to validated snapshots:',backupError)}const backupKey=K+'_preimport_'+Date.now();localStorage.setItem(backupKey,currentRaw);if(localStorage.getItem(backupKey)!==currentRaw)throw new Error('Pre-import backup verification failed')}
+   if(currentRaw!==null){try{const parsedCurrent=JSON.parse(currentRaw);if(!vld(parsedCurrent))await backupStore(currentRaw,'pre-import')}catch(backupError){console.warn('Current state could not be added to validated snapshots:',backupError)}const backupKey=K+'_preimport_'+Date.now();localStorage.setItem(backupKey,currentRaw);if(localStorage.getItem(backupKey)!==currentRaw)throw new Error('Pre-import backup verification failed')}
    const imported=JSON.parse(JSON.stringify(o));
    const next=Object.assign({
     lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[]
