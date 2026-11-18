@@ -190,34 +190,139 @@ const sortBackups=(a,b)=>b.createdAt-a.createdAt||String(b.id).localeCompare(Str
 const backupHash=raw=>{let h=2166136261;for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(16).padStart(8,'0')};
 function backupDB(){if(!('indexedDB'in window))return Promise.reject(new Error('IndexedDB is unavailable'));if(backupDbPromise)return backupDbPromise;backupDbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open(BACKUP_DB,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(BACKUP_STORE))db.createObjectStore(BACKUP_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>{backupDbPromise=null;reject(req.error||new Error('Could not open backup database'))};req.onblocked=()=>{backupDbPromise=null;reject(new Error('Backup database upgrade is blocked'))}});return backupDbPromise}
 
+
 async function backupStore(raw,source='automatic'){
  if(typeof raw!=='string'||!raw)return false;
+
  const validSources=['automatic','pre-import','pre-restore','recovery','migration'];
  if(!validSources.includes(source))source='automatic';
+
  let data;
- try{data=JSON.parse(raw)}
- catch(e){throw new Error('Backup source is not valid JSON')}
+ try{
+  data=JSON.parse(raw);
+ }catch(e){
+  throw new Error('Backup source is not valid JSON');
+ }
+
  const invalid=vld(data);
  if(invalid)throw new Error('Backup source failed validation: '+invalid);
+
  const db=await backupDB();
  const id=String(Date.now()).padStart(13,'0')+'-'+String(++backupSequence).padStart(8,'0')+'-'+Math.random().toString(36).slice(2,8);
- const record={id,createdAt:Date.now(),schema:1,raw,checksum:backupHash(raw),source};
+ const record={
+  id,
+  createdAt:Date.now(),
+  schema:1,
+  raw,
+  checksum:backupHash(raw),
+  source
+ };
+
  await new Promise((resolve,reject)=>{
   const tx=db.transaction(BACKUP_STORE,'readwrite');
   const store=tx.objectStore(BACKUP_STORE);
+  let failure=null;
+  let settled=false;
+
+  const fail=message=>{
+   if(failure)return;
+   failure=message instanceof Error?message:new Error(message);
+   try{tx.abort()}catch(e){}
+  };
+
+  tx.oncomplete=()=>{
+   if(settled)return;
+   settled=true;
+   resolve();
+  };
+
+  tx.onerror=()=>{
+   if(!failure)failure=tx.error||new Error('Backup transaction failed');
+  };
+
+  tx.onabort=()=>{
+   if(settled)return;
+   settled=true;
+   reject(failure||tx.error||new Error('Backup transaction aborted'));
+  };
+
   const all=store.getAll();
+
+  all.onerror=()=>{
+   fail(all.error||new Error('Could not read existing backups'));
+  };
+
   all.onsuccess=()=>{
-   const rows=(all.result||[]).sort(sortBackups);
-   const duplicate=rows.some(x=>x.checksum===record.checksum&&x.raw===raw);
-   if(!duplicate){
-    store.put(record);
-    rows.concat(record).sort(sortBackups).slice(BACKUP_LIMIT).forEach(x=>store.delete(x.id));
+   try{
+    const rows=(all.result||[]).sort(sortBackups);
+    const duplicate=rows.find(x=>
+     x&&x.checksum===record.checksum&&x.raw===raw
+    );
+
+    const targetId=duplicate?duplicate.id:record.id;
+
+    const verifyRequest=duplicate
+     ?store.get(targetId)
+     :store.put(record);
+
+    verifyRequest.onerror=()=>{
+     fail(verifyRequest.error||new Error('Backup write/readback request failed'));
+    };
+
+    verifyRequest.onsuccess=()=>{
+     if(duplicate){
+      const readRequest=store.get(targetId);
+
+      readRequest.onerror=()=>{
+       fail(readRequest.error||new Error('Backup readback failed'));
+      };
+
+      readRequest.onsuccess=()=>{
+       verifyAndPrune(readRequest.result);
+      };
+     }else{
+      const readRequest=store.get(targetId);
+
+      readRequest.onerror=()=>{
+       fail(readRequest.error||new Error('Backup readback failed'));
+      };
+
+      readRequest.onsuccess=()=>{
+       verifyAndPrune(readRequest.result);
+      };
+     }
+    };
+
+    function verifyAndPrune(saved){
+     try{
+      if(
+       !saved||
+       saved.id!==targetId||
+       saved.schema!==1||
+       saved.raw!==raw||
+       saved.checksum!==backupHash(raw)
+      ){
+       fail('Backup readback verification failed');
+       return;
+      }
+
+      const verifiedRows=rows.filter(x=>x&&x.id!==targetId);
+      verifiedRows.push(saved);
+
+      verifiedRows
+       .sort(sortBackups)
+       .slice(BACKUP_LIMIT)
+       .forEach(x=>store.delete(x.id));
+     }catch(e){
+      fail(e);
+     }
+    }
+   }catch(e){
+    fail(e);
    }
   };
-  tx.oncomplete=resolve;
-  tx.onerror=()=>reject(tx.error||new Error('Backup transaction failed'));
-  tx.onabort=()=>reject(tx.error||new Error('Backup transaction aborted'));
  });
+
  return true;
 }
 
