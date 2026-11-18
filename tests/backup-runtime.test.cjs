@@ -366,6 +366,62 @@ test('fake IndexedDB rolls back writes when readback verification fails', async 
   assert.equal(rows[0].id, 'existing');
   assert.equal(rows[0].checksum, 'valid-checksum');
 });
+test('backupStore aborts and preserves existing snapshots when production readback verification fails', async () => {
+  const start = html.indexOf("const BACKUP_DB='enjazi-data-protection'");
+  const end = html.indexOf('async function restoreBackupRecord', start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const source = html.slice(start, end) +
+    '\n;({ backupStore, backupList })';
+
+  const fake = fakeIndexedDB({
+    corruptReadback: true
+  });
+
+  const existing = {
+    id: 'existing-snapshot',
+    createdAt: 1,
+    schema: 1,
+    raw: '{"version":1}',
+    checksum: 'existing-checksum',
+    source: 'automatic'
+  };
+
+  fake.records.set(existing.id, existing);
+
+  const context = {
+    window: { indexedDB: fake.api },
+    indexedDB: fake.api,
+    vld: () => '',
+    console,
+    Date,
+    Math,
+    Promise,
+    JSON,
+    String,
+    Number,
+    Object,
+    Array,
+    Error,
+    setTimeout,
+    clearTimeout
+  };
+
+  const helpers = vm.runInNewContext(source, context);
+
+  await assert.rejects(
+    helpers.backupStore('{"version":2}'),
+    /readback verification failed/i
+  );
+
+  const rows = await helpers.backupList();
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, 'existing-snapshot');
+  assert.equal(rows[0].raw, '{"version":1}');
+  assert.equal(rows[0].checksum, 'existing-checksum');
+});
 
 test('save-operation queue executes mutations, imports, and restores in strict order', async () => {
   const source = `let saveQueue=Promise.resolve();const enqueueSaveOperation=work=>{const result=saveQueue.then(work,work);saveQueue=result.then(()=>{},()=>{});return result};({enqueueSaveOperation})`;
