@@ -330,11 +330,15 @@ function verifyAndPrune(saved){
    .sort(sortBackups)
    .slice(BACKUP_LIMIT)
    .forEach(x=>store.delete(x.id));
- }catch(e){
+  }catch(e){
   fail(e);
  }
- 
- });
+}
+}catch(e){
+ fail(e);
+}
+};
+});
 
  return true;
 }
