@@ -254,42 +254,87 @@ async function backupStore(raw,source='automatic'){
 
   all.onsuccess=()=>{
    try{
-    const rows=(all.result||[]).sort(sortBackups);
-    const duplicate=rows.find(x=>
-     x&&x.checksum===record.checksum&&x.raw===raw
-    );
 
-    const targetId=duplicate?duplicate.id:record.id;
+const rows=all.result||[];
 
-    const verifyRequest=duplicate
-     ?store.get(targetId)
-     :store.put(record);
+const isValidSnapshot=x=>{
+ try{
+  if(
+   !x||
+   typeof x.id!=='string'||
+   !x.id||
+   !Number.isFinite(x.createdAt)||
+   x.schema!==1||
+   typeof x.raw!=='string'||
+   !x.raw||
+   x.checksum!==backupHash(x.raw)||
+   (x.source!==undefined&&!validSources.includes(x.source))
+  )return false;
 
-    verifyRequest.onerror=()=>{
-     fail(verifyRequest.error||new Error('Backup write/readback request failed'));
-    };
+  const parsed=JSON.parse(x.raw);
+  return !vld(parsed);
+ }catch(e){
+  return false;
+ }
+};
 
-    verifyRequest.onsuccess=()=>{
-     if(duplicate){
-      const readRequest=store.get(targetId);
+const validRows=rows.filter(isValidSnapshot).sort(sortBackups);
 
-      readRequest.onerror=()=>{
-       fail(readRequest.error||new Error('Backup readback failed'));
-      };
+const duplicate=validRows.find(x=>
+ x.checksum===record.checksum&&x.raw===raw
+);
 
-      readRequest.onsuccess=()=>{
-       verifyAndPrune(readRequest.result);
-      };
-     }else{
-      const readRequest=store.get(targetId);
+const targetId=duplicate?duplicate.id:record.id;
 
-      readRequest.onerror=()=>{
-       fail(readRequest.error||new Error('Backup readback failed'));
-      };
+const verifyRequest=duplicate
+ ?store.get(targetId)
+ :store.put(record);
 
-      readRequest.onsuccess=()=>{
-       verifyAndPrune(readRequest.result);
-      };
+verifyRequest.onerror=()=>{
+ fail(verifyRequest.error||new Error('Backup write/readback request failed'));
+};
+
+verifyRequest.onsuccess=()=>{
+ if(duplicate){
+  verifyAndPrune(verifyRequest.result);
+  return;
+ }
+
+ const readRequest=store.get(targetId);
+
+ readRequest.onerror=()=>{
+  fail(readRequest.error||new Error('Backup readback failed'));
+ };
+
+ readRequest.onsuccess=()=>{
+  verifyAndPrune(readRequest.result);
+ };
+};
+
+function verifyAndPrune(saved){
+ try{
+  if(
+   !isValidSnapshot(saved)||
+   saved.id!==targetId||
+   saved.raw!==raw||
+   (!duplicate&&saved.source!==record.source)
+  ){
+   fail('Backup readback verification failed');
+   return;
+  }
+
+  const verifiedRows=validRows.filter(x=>x.id!==targetId);
+  verifiedRows.push(saved);
+
+  verifiedRows
+   .sort(sortBackups)
+   .slice(BACKUP_LIMIT)
+   .forEach(x=>store.delete(x.id));
+ }catch(e){
+  fail(e);
+ }
+}
+
      }
     };
 
