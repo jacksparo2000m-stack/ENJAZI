@@ -937,7 +937,7 @@ async function bootState(){
   RECOVERY=true;
  }
 }
-const bootReady=bootState().then(async()=>{if(!RECOVERY&&LAST_GOOD_RAW){try{await backupStore(LAST_GOOD_RAW,'pre-restore')}catch(e){RECOVERY=true;BOOT_ERROR='تعذر إنشاء أول نسخة حماية؛ تم إيقاف التعديل حتى لا تتعرض بياناتك للخطر: '+(e&&e.message||e);console.error('ENJAZI initial backup failed:',e)}}}).catch(e=>{RECOVERY=true;BOOT_ERROR='تعذر بدء حماية البيانات: '+(e&&e.message||e);console.error('ENJAZI boot failed:',e)});
+const bootReady=bootState().then(async()=>{if(!RECOVERY&&LAST_GOOD_RAW){try{await backupStore(LAST_GOOD_RAW)}catch(e){RECOVERY=true;BOOT_ERROR='تعذر إنشاء أول نسخة حماية؛ تم إيقاف التعديل حتى لا تتعرض بياناتك للخطر: '+(e&&e.message||e);console.error('ENJAZI initial backup failed:',e)}}}).catch(e=>{RECOVERY=true;BOOT_ERROR='تعذر بدء حماية البيانات: '+(e&&e.message||e);console.error('ENJAZI boot failed:',e)});
 async function consumeNativeTaskLaunch(){if(RECOVERY||!NP.PersistentTasks||typeof NP.PersistentTasks.consumePendingTask!=='function')return;try{const result=await NP.PersistentTasks.consumePendingTask();const taskId=result&&result.taskId;if(taskId){const task=S.tasks.find(x=>x.id===taskId);if(task)openSheet(taskId);else toast(T('المهمة المرتبطة بالإشعار غير موجودة','The task linked to the notification was not found'))}}catch(e){console.error('ENJAZI notification launch handling failed:',e)}}
 window.addEventListener('enjazi-native-task-open',consumeNativeTaskLaunch);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!RECOVERY&&!BOOTING){tick();pins();sched();render();consumeNativeTaskLaunch()}});
