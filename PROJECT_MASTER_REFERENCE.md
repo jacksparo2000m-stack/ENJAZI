@@ -9,22 +9,28 @@
 - Main application: `index.html`
 - Backup runtime tests: `tests/backup-runtime.test.cjs`
 - Android workflow: `.github/workflows/android.yml`
-- Latest branch snapshot checked while preparing this reference:
+
+Latest branch snapshot checked while preparing this reference:
 index.html blob SHA:
-8d77dce00457206da1d9e5ffbd17835a489bdc8b
+9023ae76d61bc3964a42a9afb9b9db984f1f4422
 
 tests/backup-runtime.test.cjs blob SHA:
-0b3df1c5916f64fe7ab616ba666a7d569461386e
+157b83d4657040c45df80758e84fafc206ad4463
 
-Latest verified release: v1.163
-Workflow run: #163
-Run ID: 44250319184
-Commit: a728b1b63f7cd5f9718402c8d536eae15c823260
+Latest verified release: v1.169
+Workflow run: #169
+Run ID: 44331539223
+Commit: 1fd456a45042094165b3a89c4e2697f2dd5a14bb
 Workflow conclusion: success
-Tests: 46 passed, 0 failed
+Automated test suite: passed (exact test count not independently verified)
+APK build, identity, signing, and packaged web assets: verified
+Release APK: enjazi.apk
 
 Latest verified test file blob SHA:
-84c39730995f587f16415546080024dd6fd1cc6b
+157b83d4657040c45df80758e84fafc206ad4463
+
+Latest release URL:
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.169
 
 Ordinary-save review:
 - Primary storage failure preserves the previous stored data.
