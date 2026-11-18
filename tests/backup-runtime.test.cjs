@@ -825,3 +825,91 @@ test('import preserves the current raw data when IndexedDB pre-import backup fai
   assert.ok(preservedKey, 'raw pre-import backup key should exist');
   assert.equal(localStorage.getItem(preservedKey), oldRaw);
 });
+
+
+test('completed linked tasks preserve and display their descriptions in subject progress', () => {
+  const start = html.indexOf('const logDescription=l=>');
+  const end = html.indexOf('const nd=', start);
+
+  assert.ok(start >= 0 && end > start, 'linked task logging helpers should exist');
+
+  const source = html.slice(start, end) +
+    '\n;({ logDescription, lkd })';
+
+  const task = {
+    id: 'task-1',
+    t: 'ذاكر مادة البرمجة',
+    n: 'مذاكرة المحاضرة الثانية وحل التدريبات',
+    lk: 'group-1:item-1'
+  };
+
+  const item = {
+    id: 'item-1',
+    n: 'البرمجة',
+    ls: []
+  };
+
+  const context = {
+    S: {
+      tasks: [task],
+      groups: [{
+        id: 'group-1',
+        n: 'مواد الكلية',
+        it: [item]
+      }]
+    },
+    Date
+  };
+
+  const helpers = vm.runInNewContext(source, context);
+
+  helpers.lkd(task, 1);
+
+  assert.equal(item.ls.length, 1);
+  assert.equal(item.ls[0].n, task.t);
+  assert.equal(
+    item.ls[0].description,
+    task.n,
+    'completed task description must be saved in the subject log'
+  );
+
+  assert.equal(
+    helpers.logDescription(item.ls[0]),
+    task.n,
+    'subject progress must display the saved description'
+  );
+
+  context.S.tasks = [];
+
+  assert.equal(
+    helpers.logDescription(item.ls[0]),
+    task.n,
+    'saved description must remain available without the original task'
+  );
+
+  const legacyTask = {
+    id: 'legacy-task',
+    n: 'وصف مهمة قديمة'
+  };
+
+  context.S.tasks = [legacyTask];
+
+  assert.equal(
+    helpers.logDescription({
+      id: 'tlegacy-task',
+      n: 'مهمة قديمة'
+    }),
+    legacyTask.n,
+    'legacy logs should fall back to the original task description'
+  );
+
+  const trackStart = html.indexOf('function track(){');
+  const trackEnd = html.indexOf('const seg=', trackStart);
+  const trackSource = html.slice(trackStart, trackEnd);
+
+  assert.ok(
+    trackSource.includes("${logDescription(l)?`<p>${E(logDescription(l))}</p>`:''}"),
+    'subject progress view must render the description below the title'
+  );
+});
+
