@@ -16,13 +16,21 @@ index.html blob SHA:
 tests/backup-runtime.test.cjs blob SHA:
 0b3df1c5916f64fe7ab616ba666a7d569461386e
 
-Latest verified release: v1.160
-Workflow run: #160
-Run ID: 44248951033
-Commit: 9162ea1d4e772f17524b67e9fba32351225cdc46
+Latest verified release: v1.163
+Workflow run: #163
+Run ID: 44250319184
+Commit: a728b1b63f7cd5f9718402c8d536eae15c823260
 Workflow conclusion: success
-Tests: 45 passed, 0 failed
+Tests: 46 passed, 0 failed
 
+Latest verified test file blob SHA:
+84c39730995f587f16415546080024dd6fd1cc6b
+
+Ordinary-save review:
+- Primary storage failure preserves the previous stored data.
+- Failed primary save skips backup creation.
+- Previous in-memory state is restored.
+- Automated test passed in workflow run #163.
 
 ### Collaboration rules
 
