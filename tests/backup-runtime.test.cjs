@@ -640,6 +640,31 @@ test('primary storage is verified before backup starts', async () => {
   assert.equal(await saving, true);
 });
 
+test('primary save failure preserves the previous state and skips backup', async () => {
+  let backupCalled = false;
+
+  const harness = createSaveHarness(async () => {
+    backupCalled = true;
+    return true;
+  });
+
+  harness.context.localStorage.setItem = () => {
+    throw new Error('Simulated primary storage failure');
+  };
+
+  const result = await harness.save(false);
+
+  assert.equal(result, false);
+  assert.equal(backupCalled, false);
+  assert.equal(harness.getStored(), harness.oldRaw);
+  assert.equal(
+    harness.context.S.tasks[0].id,
+    'old',
+    'in-memory state must return to the last verified state'
+  );
+  assert.equal(harness.context.SAVE_FAILED, true);
+});
+
 test('backup failure does not undo a verified primary save', async () => {
   const harness = createSaveHarness(async () => {
     throw new Error('Simulated backup failure');
