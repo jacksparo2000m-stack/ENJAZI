@@ -297,6 +297,72 @@ test('fake IndexedDB readwrite transactions roll back on abort', async () => {
 
   assert.deepEqual(rows, []);
 });
+test('fake IndexedDB rolls back writes when readback verification fails', async () => {
+  const fake = fakeIndexedDB({
+    corruptReadback: true
+  });
+
+  const existing = {
+    id: 'existing',
+    raw: '{"version":1}',
+    checksum: 'valid-checksum'
+  };
+
+  fake.records.set(existing.id, existing);
+
+  const db = await new Promise((resolve, reject) => {
+    const request = fake.api.open();
+
+    request.onerror = () => reject(request.error);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore('snapshots');
+    };
+
+    request.onsuccess = () => resolve(request.result);
+  });
+
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('snapshots', 'readwrite');
+    const store = tx.objectStore('snapshots');
+
+    tx.oncomplete = () => {
+      reject(new Error('Failed readback must abort the transaction'));
+    };
+
+    tx.onabort = resolve;
+
+    store.put({
+      id: 'new-snapshot',
+      raw: '{"version":2}',
+      checksum: 'expected-checksum'
+    }).onsuccess = () => {
+      const request = store.get('new-snapshot');
+
+      request.onsuccess = () => {
+        if (
+          !request.result ||
+          request.result.checksum !== 'expected-checksum'
+        ) {
+          tx.abort();
+        }
+      };
+    };
+  });
+
+  const rows = await new Promise((resolve, reject) => {
+    const tx = db.transaction('snapshots', 'readonly');
+    const request = tx.objectStore('snapshots').getAll();
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, 'existing');
+  assert.equal(rows[0].checksum, 'valid-checksum');
+});
+
 test('save-operation queue executes mutations, imports, and restores in strict order', async () => {
   const source = `let saveQueue=Promise.resolve();const enqueueSaveOperation=work=>{const result=saveQueue.then(work,work);saveQueue=result.then(()=>{},()=>{});return result};({enqueueSaveOperation})`;
   const { enqueueSaveOperation } = vm.runInNewContext(source, { Promise });
