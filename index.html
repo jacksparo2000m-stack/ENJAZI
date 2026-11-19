@@ -912,8 +912,25 @@ $('#imp').addEventListener('change',e=>{
    if(postError)return toast(postError);
 
    const payload=JSON.stringify(next);
-   localStorage.setItem(K,payload);
-   if(localStorage.getItem(K)!==payload)throw new Error('Imported data verification failed');
+      try{
+    localStorage.setItem(K,payload);
+    if(localStorage.getItem(K)!==payload)
+     throw new Error('Imported data verification failed');
+   }catch(writeError){
+    if(currentRaw!==null){
+     try{
+      if(localStorage.getItem(K)!==currentRaw)
+       localStorage.setItem(K,currentRaw);
+
+      if(localStorage.getItem(K)!==currentRaw)
+       throw new Error('Previous data rollback verification failed');
+     }catch(rollbackError){
+      console.error('ENJAZI import rollback failed:',rollbackError);
+      throw new Error('Import failed and previous data could not be verified');
+     }
+    }
+    throw writeError;
+   }
    S=next;LAST_GOOD_RAW=payload;BOOT_RAW=payload;BOOT_DATA=next;RECOVERY=false;BOOT_ERROR='';BOOT_READ_FAILED=false;SAVE_FAILED=false;
    committed=true;
    });
