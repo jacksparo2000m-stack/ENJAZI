@@ -1020,3 +1020,111 @@ test('import aborts before replacing current data when raw pre-import preservati
 });
 
 
+test('import rolls back to the previous raw data when imported data verification fails', async () => {
+  const start = html.indexOf("$('#imp').addEventListener('change'");
+  const end = html.indexOf("document.addEventListener('keydown'", start);
+
+  assert.ok(start >= 0 && end > start, 'import handler should exist');
+
+  const oldRaw = JSON.stringify({
+    lang: 'ar',
+    tasks: [],
+    groups: [{ id: 'old-group', n: 'Old', it: [] }]
+  });
+
+  const imported = {
+    lang: 'ar',
+    tasks: [],
+    groups: [{ id: 'new-group', n: 'New', it: [] }]
+  };
+
+  const values = new Map([['pt2', oldRaw]]);
+  let importedWriteAttempted = false;
+  let rollbackAttempted = false;
+  let reader;
+
+  const localStorage = {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      if (key === 'pt2' && String(value) !== oldRaw) {
+        importedWriteAttempted = true;
+        values.set(key, 'corrupted-imported-data');
+        return;
+      }
+
+      if (key === 'pt2' && importedWriteAttempted) {
+        rollbackAttempted = true;
+      }
+
+      values.set(key, String(value));
+    }
+  };
+
+  const input = {
+    files: [{ size: 100 }],
+    value: '',
+    addEventListener(event, handler) {
+      this.handler = handler;
+    }
+  };
+
+  class FakeFileReader {
+    constructor() {
+      reader = this;
+      this.result = JSON.stringify(imported);
+    }
+    readAsText() {}
+  }
+
+  const context = {
+    $: () => input,
+    FileReader: FakeFileReader,
+    localStorage,
+    K: 'pt2',
+    S: JSON.parse(oldRaw),
+    RECOVERY: false,
+    SAVE_FAILED: false,
+    LAST_GOOD_RAW: oldRaw,
+    BOOT_RAW: oldRaw,
+    BOOT_DATA: JSON.parse(oldRaw),
+    BOOT_ERROR: '',
+    BOOT_READ_FAILED: false,
+    vld: () => '',
+    mig() {},
+    T: (ar, en) => ar,
+    toast() {},
+    confirm: () => true,
+    console,
+    JSON,
+    Promise,
+    Date,
+    clearTimeout() {},
+    save: { t: null },
+    enqueueSaveOperation: work => Promise.resolve().then(work),
+    backupStore: async () => {
+      throw new Error('Simulated IndexedDB backup failure');
+    },
+    render() {},
+    LN: null
+  };
+
+  vm.runInNewContext(
+    html.slice(start, end),
+    context
+  );
+
+  input.handler({ target: input });
+  await reader.onload();
+
+  assert.equal(importedWriteAttempted, true);
+  assert.equal(rollbackAttempted, true);
+  assert.equal(
+    localStorage.getItem('pt2'),
+    oldRaw,
+    'previous data must be restored after imported data verification fails'
+  );
+});
+
+
