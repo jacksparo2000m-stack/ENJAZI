@@ -1405,7 +1405,7 @@ test('bootState protects previous data during migration failures', async t => {
 
         primaryWrites++;
 
-        if (mode === 'write-failure' && value !== oldRaw) {
+        if (   (mode === 'write-failure' || mode === 'rollback-failure') &&   value !== oldRaw ) {
           values.set(key, 'corrupted-migration-data');
           return;
         }
