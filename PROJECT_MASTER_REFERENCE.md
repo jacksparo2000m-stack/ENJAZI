@@ -10,27 +10,48 @@
 - Backup runtime tests: `tests/backup-runtime.test.cjs`
 - Android workflow: `.github/workflows/android.yml`
 
+
 Latest branch snapshot checked while preparing this reference:
+Branch: `fix/primary-storage-before-backup`
+
 index.html blob SHA:
-9023ae76d61bc3964a42a9afb9b9db984f1f4422
+`6e0b44981f699cca6cb9895fdb0d1b60b98445a3`
 
 tests/backup-runtime.test.cjs blob SHA:
-157b83d4657040c45df80758e84fafc206ad4463
+`9d15784d895f8f44a1d79db2b4d3319eb7f07c7b`
 
-Latest verified release: v1.169
-Workflow run: #169
-Run ID: 44331539223
-Commit: 1fd456a45042094165b3a89c4e2697f2dd5a14bb
+Latest verified release: v1.174
+Workflow run: #174
+Run ID: 44534133463
+Commit: `3bf537837f084100d4b5328aa47142f434fce40c`
 Workflow conclusion: success
 Automated test suite: passed (exact test count not independently verified)
-APK build, identity, signing, and packaged web assets: verified
-Release APK: enjazi.apk
+APK build, identity, signing, packaged web assets, and release publication: verified
 
-Latest verified test file blob SHA:
-157b83d4657040c45df80758e84fafc206ad4463
+Release APK: `enjazi.apk`
+APK size: 4,358,273 bytes
+APK SHA256:
+`e4c25588d680f3d68548d11d28bb5782795b9dc5f8345a9c3c41656bc672f02f`
 
 Latest release URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.169
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.174
+
+Latest APK URL:
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.174/enjazi.apk
+
+### Import review — implementation and automated verification completed
+
+Verified import behavior:
+- If the IndexedDB pre-import snapshot fails, import continues only after raw localStorage preservation succeeds.
+- If raw pre-import preservation fails, import aborts before replacing current data.
+- If imported data write/readback verification fails, the previous raw data is restored and verified.
+- In-memory application state is not committed until imported data has been written and verified.
+
+Automated tests cover these failure scenarios.
+GitHub Actions runs #173 and #174 succeeded.
+Release v1.174 was published successfully.
+
+Important: Import review is complete. Restore, migration, recovery, and read-only diagnostics still require their planned reviews before Phase 1 can be closed.
 
 Ordinary-save review:
 - Primary storage failure preserves the previous stored data.
