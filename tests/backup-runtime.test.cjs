@@ -1152,7 +1152,9 @@ test('restoreBackupRecord preserves data and commits state only after verified s
   const restoredRaw = JSON.stringify(restoredData);
 
   async function runScenario(mode) {
-    const values = new Map([['pt2', oldRaw]]);
+    const values = new Map(
+  mode === 'no-previous-data' ? [] : [['pt2', oldRaw]]
+);
     let renderCount = 0;
     let toastCount = 0;
 
@@ -1193,7 +1195,7 @@ test('restoreBackupRecord preserves data and commits state only after verified s
     const context = {
       localStorage,
       K: 'pt2',
-      LAST_GOOD_RAW: oldRaw,
+      LAST_GOOD_RAW: mode === 'no-previous-data' ? null : oldRaw,
       S: oldData,
       BOOT_RAW: oldRaw,
       BOOT_DATA: oldData,
@@ -1300,6 +1302,31 @@ test('restoreBackupRecord preserves data and commits state only after verified s
     assert.equal(result.renderCount, 0);
     assert.equal(result.toastCount, 0);
   });
+  
+  await t.test('failed restore without previous data reports that no rollback was available', async () => {
+    const result = await runScenario('no-previous-data');
+
+    assert.ok(result.error);
+    assert.match(
+      result.error.message,
+      /No previous data was available to roll back to/
+    );
+
+    assert.equal(
+      result.context.LAST_GOOD_RAW,
+      null
+    );
+
+    assert.equal(
+      result.context.S.groups[0].id,
+      'old',
+      'in-memory state must not be committed after failed restore'
+    );
+
+    assert.equal(result.renderCount, 0);
+    assert.equal(result.toastCount, 0);
+  });
+
 });
 
 
