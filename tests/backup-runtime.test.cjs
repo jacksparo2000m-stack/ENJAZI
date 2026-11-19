@@ -1128,3 +1128,178 @@ test('import rolls back to the previous raw data when imported data verification
 });
 
 
+test('restoreBackupRecord preserves data and commits state only after verified storage writes', async t => {
+  const start = html.indexOf('async function restoreBackupRecord(record){');
+  const end = html.indexOf('\nconst enqueueSaveOperation=work=>', start);
+
+  assert.ok(start >= 0 && end > start, 'restore function should exist');
+
+  const source = html.slice(start, end) + '\n;restoreBackupRecord';
+
+  const oldData = {
+    version: 1,
+    tasks: [],
+    groups: [{ id: 'old', n: 'Old', it: [] }]
+  };
+
+  const restoredData = {
+    version: 2,
+    tasks: [],
+    groups: [{ id: 'new', n: 'New', it: [] }]
+  };
+
+  const oldRaw = JSON.stringify(oldData);
+  const restoredRaw = JSON.stringify(restoredData);
+
+  async function runScenario(mode) {
+    const values = new Map([['pt2', oldRaw]]);
+    let renderCount = 0;
+    let toastCount = 0;
+
+    const localStorage = {
+      getItem(key) {
+        return values.has(key) ? values.get(key) : null;
+      },
+
+      setItem(key, value) {
+        value = String(value);
+
+        if (
+          mode === 'preservation-failure' &&
+          key.startsWith('pt2_pre_restore_')
+        ) {
+          throw new Error('Simulated raw preservation failure');
+        }
+
+        if (key === 'pt2' && value === restoredRaw) {
+          if (mode !== 'success') {
+            values.set(key, 'corrupted-restored-data');
+            return;
+          }
+        }
+
+        if (
+          key === 'pt2' &&
+          value === oldRaw &&
+          mode === 'rollback-failure'
+        ) {
+          throw new Error('Simulated rollback failure');
+        }
+
+        values.set(key, value);
+      }
+    };
+
+    const context = {
+      localStorage,
+      K: 'pt2',
+      LAST_GOOD_RAW: oldRaw,
+      S: oldData,
+      BOOT_RAW: oldRaw,
+      BOOT_DATA: oldData,
+      RECOVERY: false,
+      SAVE_FAILED: false,
+      BOOT_ERROR: '',
+      BOOT_READ_FAILED: false,
+
+      backupHash: raw => 'hash:' + raw,
+      vld: () => '',
+      mig() {},
+      enqueueSaveOperation: work => Promise.resolve().then(work),
+      backupStore: async () => true,
+
+      render() {
+        renderCount++;
+      },
+
+      toast() {
+        toastCount++;
+      },
+
+      T: (ar, en) => ar,
+      JSON,
+      Date,
+      Promise,
+      Error,
+      console
+    };
+
+    const restore = vm.runInNewContext(source, context);
+
+    const record = {
+      raw: restoredRaw,
+      checksum: 'hash:' + restoredRaw
+    };
+
+    let error = null;
+
+    try {
+      await restore(record);
+    } catch (e) {
+      error = e;
+    }
+
+    return {
+      values,
+      context,
+      error,
+      renderCount,
+      toastCount
+    };
+  }
+
+  await t.test('successful restore commits only after verification', async () => {
+    const result = await runScenario('success');
+
+    assert.equal(result.error, null);
+    assert.equal(result.values.get('pt2'), restoredRaw);
+    assert.equal(result.context.LAST_GOOD_RAW, restoredRaw);
+    assert.equal(result.context.S.groups[0].id, 'new');
+    assert.equal(result.context.BOOT_RAW, restoredRaw);
+    assert.equal(result.renderCount, 1);
+    assert.equal(result.toastCount, 1);
+  });
+
+  await t.test('failed restore rolls back and verifies previous data', async () => {
+    const result = await runScenario('rollback-success');
+
+    assert.ok(result.error);
+    assert.match(result.error.message, /Restore failed/);
+    assert.equal(result.values.get('pt2'), oldRaw);
+    assert.equal(result.context.LAST_GOOD_RAW, oldRaw);
+    assert.equal(result.context.S.groups[0].id, 'old');
+    assert.equal(result.renderCount, 0);
+    assert.equal(result.toastCount, 0);
+  });
+
+  await t.test('failed restore and failed rollback report both failures', async () => {
+    const result = await runScenario('rollback-failure');
+
+    assert.ok(result.error);
+    assert.match(result.error.message, /could not be verified/);
+    assert.match(result.error.message, /Simulated rollback failure/);
+
+    const rawKey = [...result.values.keys()].find(
+      key => key.startsWith('pt2_pre_restore_')
+    );
+
+    assert.ok(rawKey, 'raw pre-restore copy should remain available');
+    assert.equal(result.values.get(rawKey), oldRaw);
+    assert.equal(result.context.S.groups[0].id, 'old');
+    assert.equal(result.renderCount, 0);
+    assert.equal(result.toastCount, 0);
+  });
+
+  await t.test('raw preservation failure aborts before primary mutation', async () => {
+    const result = await runScenario('preservation-failure');
+
+    assert.ok(result.error);
+    assert.match(result.error.message, /Pre-restore raw backup verification failed|Simulated raw preservation failure/);
+    assert.equal(result.values.get('pt2'), oldRaw);
+    assert.equal(result.context.S.groups[0].id, 'old');
+    assert.equal(result.renderCount, 0);
+    assert.equal(result.toastCount, 0);
+  });
+});
+
+
