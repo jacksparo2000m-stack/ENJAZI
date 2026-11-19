@@ -147,16 +147,18 @@ Automated verification:
 - APK identity, signing, and packaged web assets verified.
 - Release v1.160 published successfully.
 
+Completed Phase 1 reviews:
+- backupStore audit and retention behavior.
+- Ordinary-save backup behavior.
+- Import preservation, verification, and rollback behavior.
+
 Remaining Phase 1 work:
-- Review ordinary-save backup behavior.
-- Review import preservation and backup behavior.
 - Review restore preservation and verification.
 - Review migration and recovery backup paths.
 - Confirm diagnostics remain read-only.
 
 Do not mark Phase 1 complete until all remaining paths are reviewed
 and verified.
-
 
 ## 5. Product roadmap — all agreed goals
 
