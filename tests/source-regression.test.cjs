@@ -238,8 +238,8 @@ test('backup restore validates snapshot and preserves current state before repla
   const restore = html.slice(start, end);
 
   assert.match(restore, /record\.checksum!==backupHash\(record\.raw\)/);
-  assert.match(restore, /const data=JSON\.parse\(record\.raw\),invalid=vld\(data\)/);
-  assert.match(restore, /mig\(next\);const postError=vld\(next\)/);
+  assert.match(restore, /const data=JSON\.parse\(record\.raw\);\s*const invalid=vld\(data\)/);
+assert.match(restore, /mig\(next\);\s*const postError=vld\(next\)/);
 
   const preserveAt = restore.indexOf("const rawKey=K+'_pre_restore_'+Date.now()");
   const replaceAt = restore.indexOf('localStorage.setItem(K,payload)');
@@ -248,9 +248,12 @@ test('backup restore validates snapshot and preserves current state before repla
   assert.match(restore.slice(preserveAt, replaceAt), /localStorage\.getItem\(rawKey\)!==currentRaw/);
 
   const verifyAt = restore.indexOf('localStorage.getItem(K)!==payload');
-  const commitAt = restore.indexOf('LAST_GOOD_RAW=payload;S=next');
+  const commitAt = restore.indexOf('LAST_GOOD_RAW=payload;');
+const stateCommitAt = restore.indexOf('S=next', commitAt);
 
-  assert.ok(verifyAt >= 0 && commitAt > verifyAt);
+assert.ok(verifyAt >= 0 && commitAt > verifyAt);
+assert.ok(stateCommitAt > commitAt);
+  
 });
 
 
