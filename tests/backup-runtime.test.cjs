@@ -1365,3 +1365,161 @@ const values = new Map(
 });
 
 
+test('bootState protects previous data during migration failures', async t => {
+  const migrationStart = html.indexOf('const mig=(s)=>{');
+  const migrationEnd = html.indexOf('\naddEventListener(', migrationStart);
+  const bootStart = html.indexOf('async function bootState(){');
+  const bootEnd = html.indexOf('\nconst bootReady=', bootStart);
+
+  assert.ok(migrationStart >= 0 && migrationEnd > migrationStart);
+  assert.ok(bootStart >= 0 && bootEnd > bootStart);
+
+  const migrationSource = html.slice(migrationStart, migrationEnd);
+  const bootSource = html.slice(bootStart, bootEnd);
+
+  const oldData = {
+    lang: 'ar',
+    tasks: [{ id: 'old-task' }],
+    groups: []
+  };
+
+  const oldRaw = JSON.stringify(oldData);
+
+  async function runScenario(mode) {
+    const values = new Map([['pt2', oldRaw]]);
+    const backupCalls = [];
+    let primaryWrites = 0;
+
+    const localStorage = {
+      getItem(key) {
+        return values.has(key) ? values.get(key) : null;
+      },
+
+      setItem(key, value) {
+        value = String(value);
+
+        if (key !== 'pt2') {
+          values.set(key, value);
+          return;
+        }
+
+        primaryWrites++;
+
+        if (mode === 'write-failure' && value !== oldRaw) {
+          values.set(key, 'corrupted-migration-data');
+          return;
+        }
+
+        if (mode === 'rollback-failure' && value === oldRaw && primaryWrites > 1) {
+          throw new Error('Simulated migration rollback failure');
+        }
+
+        values.set(key, value);
+      }
+    };
+
+    const context = {
+      BOOT_RAW: oldRaw,
+      BOOT_DATA: JSON.parse(oldRaw),
+      BOOT_ERROR: '',
+      BOOT_TRACE: {},
+      RECOVERY: false,
+      LAST_GOOD_RAW: null,
+      S: JSON.parse(oldRaw),
+      K: 'pt2',
+
+      localStorage,
+      DEFAULT_STATE: () => ({
+        lang: 'ar',
+        th: 'light',
+        fs: 'm',
+        tasks: [],
+        groups: [],
+        cats: [],
+        notes: []
+      }),
+
+      vld: () => '',
+      auditHash: raw => 'hash:' + raw,
+
+      backupStore: async (...args) => {
+        backupCalls.push(args);
+
+        if (mode === 'backup-failure') {
+          throw new Error('Simulated migration backup failure');
+        }
+
+        return true;
+      },
+
+      JSON,
+      Promise,
+      Error,
+      console
+    };
+
+    vm.runInNewContext(
+      migrationSource + '\n' + bootSource + '\n;bootState()',
+      context
+    );
+
+    await context.bootState?.();
+
+    return {
+      context,
+      values,
+      backupCalls,
+      primaryWrites
+    };
+  }
+
+  await t.test('successful migration preserves old data before verified write', async () => {
+    const result = await runScenario('success');
+
+    const migratedRaw = result.values.get('pt2');
+
+    assert.notEqual(migratedRaw, oldRaw);
+    assert.deepEqual(
+      JSON.parse(migratedRaw).notes,
+      []
+    );
+
+    assert.deepEqual(result.backupCalls[0], [oldRaw, 'migration']);
+    assert.equal(result.context.RECOVERY, false);
+    assert.equal(result.context.BOOT_RAW, migratedRaw);
+    assert.equal(result.context.LAST_GOOD_RAW, migratedRaw);
+  });
+
+  await t.test('backup failure prevents migration write', async () => {
+    const result = await runScenario('backup-failure');
+
+    assert.equal(result.values.get('pt2'), oldRaw);
+    assert.equal(result.primaryWrites, 0);
+    assert.equal(result.context.RECOVERY, true);
+    assert.match(result.context.BOOT_ERROR, /Simulated migration backup failure/);
+  });
+
+  await t.test('failed migration write rolls back and verifies old data', async () => {
+    const result = await runScenario('write-failure');
+
+    assert.equal(result.values.get('pt2'), oldRaw);
+    assert.equal(result.context.RECOVERY, true);
+    assert.match(result.context.BOOT_ERROR, /تمت استعادة البيانات السابقة والتحقق منها/);
+  });
+
+  await t.test('failed migration rollback reports both failures', async () => {
+    const result = await runScenario('rollback-failure');
+
+    assert.equal(
+      result.values.get('pt2'),
+      'corrupted-migration-data'
+    );
+
+    assert.equal(result.context.RECOVERY, true);
+    assert.match(result.context.BOOT_ERROR, /Simulated migration rollback failure/);
+    assert.match(result.context.BOOT_ERROR, /Simulated migration storage verification failure|Migration storage verification failed/);
+  });
+});
+
+
+
