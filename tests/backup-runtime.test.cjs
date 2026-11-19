@@ -1149,11 +1149,19 @@ test('restoreBackupRecord preserves data and commits state only after verified s
   };
 
   const oldRaw = JSON.stringify(oldData);
-  const restoredRaw = JSON.stringify(restoredData);
+const restoredRaw = JSON.stringify(restoredData);
+const corruptCurrentRaw = 'corrupted-current-data';
 
   async function runScenario(mode) {
-    const values = new Map(
-  mode === 'no-previous-data' ? [] : [['pt2', oldRaw]]
+    const initialRaw =
+  mode === 'no-previous-data'
+    ? null
+    : mode === 'invalid-current-data'
+      ? corruptCurrentRaw
+      : oldRaw;
+
+const values = new Map(
+  initialRaw === null ? [] : [['pt2', initialRaw]]
 );
     let renderCount = 0;
     let toastCount = 0;
@@ -1323,6 +1331,33 @@ test('restoreBackupRecord preserves data and commits state only after verified s
       'in-memory state must not be committed after failed restore'
     );
 
+    assert.equal(result.renderCount, 0);
+    assert.equal(result.toastCount, 0);
+  });
+    await t.test('failed restore does not replace a valid last-good value with corrupt primary bytes', async () => {
+    const result = await runScenario('invalid-current-data');
+
+    assert.ok(result.error);
+
+    assert.equal(
+      result.values.get('pt2'),
+      corruptCurrentRaw
+    );
+
+    assert.equal(
+      result.context.LAST_GOOD_RAW,
+      oldRaw,
+      'a corrupt primary value must not replace the known-good raw value'
+    );
+
+    const rawKey = [...result.values.keys()].find(
+      key => key.startsWith('pt2_pre_restore_')
+    );
+
+    assert.ok(rawKey);
+    assert.equal(result.values.get(rawKey), corruptCurrentRaw);
+
+    assert.equal(result.context.S.groups[0].id, 'old');
     assert.equal(result.renderCount, 0);
     assert.equal(result.toastCount, 0);
   });
