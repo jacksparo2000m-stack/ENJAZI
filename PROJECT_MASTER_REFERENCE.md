@@ -206,6 +206,19 @@ Work in this order unless the user explicitly changes priorities.
 
 ## 7. Change log
 
+### 2026-11-19 — Import review verified and v1.174 released
+
+- Completed the import preservation and verification review.
+- Confirmed import aborts when raw pre-import preservation fails.
+- Confirmed imported data is read back and verified before in-memory state is committed.
+- Confirmed rollback restores and verifies the previous raw data when imported data verification fails.
+- Added automated coverage for the failure scenarios.
+- GitHub Actions runs #173 and #174 succeeded.
+- Release v1.174 published successfully.
+- Updated the latest branch snapshot and release details.
+- Phase 1 remains open: restore, migration, recovery, and read-only diagnostics still require review.
+
+  
 ### 2026-11-18 — backupStore audit verified
 - Verified backupStore validation, IndexedDB transaction handling,
   readback verification, atomic pruning, and 10-valid-snapshot retention.
