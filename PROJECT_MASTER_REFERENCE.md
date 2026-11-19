@@ -148,12 +148,20 @@ Completed Phase 1 reviews:
 - backupStore audit and retention behavior.
 - Ordinary-save backup behavior.
 - Import preservation, verification, and rollback behavior.
+- Restore preservation, verification, and rollback behavior.
+
+Restore review verification:
+- Restore validates backup records before applying them.
+- Current data is preserved before restore.
+- Restored primary storage is read back and verified.
+- Failed restore attempts rollback and verifies the previous raw data.
+- Invalid rollback data does not overwrite a valid last-good value.
+- Automated restore regression tests passed in workflow #185.
+- Full test suite: 57 passed, 0 failed.
 
 Remaining Phase 1 work:
-- Review restore preservation and verification.
 - Review migration and recovery backup paths.
 - Confirm diagnostics remain read-only.
-
 Do not mark Phase 1 complete until all remaining paths are reviewed
 and verified.
 
