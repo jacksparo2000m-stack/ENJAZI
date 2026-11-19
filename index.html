@@ -344,7 +344,100 @@ function verifyAndPrune(saved){
 }
 
 async function backupList(){const db=await backupDB();return new Promise((resolve,reject)=>{const tx=db.transaction(BACKUP_STORE,'readonly'),req=tx.objectStore(BACKUP_STORE).getAll();req.onsuccess=()=>resolve((req.result||[]).sort(sortBackups));req.onerror=()=>reject(req.error||new Error('Could not read backups'))})}
-async function restoreBackupRecord(record){return enqueueSaveOperation(async()=>{if(!record||typeof record.raw!=='string'||record.checksum!==backupHash(record.raw))throw new Error('Backup integrity check failed');const data=JSON.parse(record.raw),invalid=vld(data);if(invalid)throw new Error(invalid);const next=JSON.parse(JSON.stringify(data));mig(next);const postError=vld(next);if(postError)throw new Error(postError);const payload=JSON.stringify(next),currentRaw=localStorage.getItem(K);if(currentRaw!==null){const rawKey=K+'_pre_restore_'+Date.now();localStorage.setItem(rawKey,currentRaw);if(localStorage.getItem(rawKey)!==currentRaw)throw new Error('Pre-restore raw backup verification failed');try{if(currentRaw!==LAST_GOOD_RAW&&!vld(JSON.parse(currentRaw)))await backupStore(currentRaw,'pre-restore')}catch(e){console.warn('Current state was preserved as raw data but not added to validated snapshots:',e)}}if(LAST_GOOD_RAW&&LAST_GOOD_RAW!==payload&&LAST_GOOD_RAW!==currentRaw)await backupStore(LAST_GOOD_RAW,'pre-restore');localStorage.setItem(K,payload);if(localStorage.getItem(K)!==payload)throw new Error('Restored data verification failed');LAST_GOOD_RAW=payload;S=next;BOOT_RAW=payload;BOOT_DATA=next;RECOVERY=false;SAVE_FAILED=false;BOOT_ERROR='';BOOT_READ_FAILED=false;render();toast(T('تم استرجاع النسخة الاحتياطية بنجاح','Backup restored successfully'))});}
+
+async function restoreBackupRecord(record){
+ return enqueueSaveOperation(async()=>{
+  if(!record||typeof record.raw!=='string'||record.checksum!==backupHash(record.raw))
+   throw new Error('Backup integrity check failed');
+
+  const data=JSON.parse(record.raw);
+  const invalid=vld(data);
+  if(invalid)throw new Error(invalid);
+
+  const next=JSON.parse(JSON.stringify(data));
+  mig(next);
+
+  const postError=vld(next);
+  if(postError)throw new Error(postError);
+
+  const payload=JSON.stringify(next);
+  const currentRaw=localStorage.getItem(K);
+  const rollbackRaw=currentRaw!==null?currentRaw:LAST_GOOD_RAW;
+
+  if(currentRaw!==null){
+   const rawKey=K+'_pre_restore_'+Date.now();
+   localStorage.setItem(rawKey,currentRaw);
+
+   if(localStorage.getItem(rawKey)!==currentRaw)
+    throw new Error('Pre-restore raw backup verification failed');
+  }
+
+  if(LAST_GOOD_RAW&&LAST_GOOD_RAW!==payload&&LAST_GOOD_RAW!==currentRaw){
+   try{
+    await backupStore(LAST_GOOD_RAW,'pre-restore');
+   }catch(e){
+    if(currentRaw===null)
+     throw new Error('Could not preserve the previous state before restore: '+(e.message||e));
+
+    console.warn('Previous state is preserved as raw data but not as an IndexedDB snapshot:',e);
+   }
+  }
+
+  try{
+   if(currentRaw!==null&&currentRaw!==LAST_GOOD_RAW){
+    try{
+     const parsed=JSON.parse(currentRaw);
+     if(!vld(parsed))await backupStore(currentRaw,'pre-restore');
+    }catch(e){
+     console.warn('Raw pre-restore copy is preserved; validated snapshot was not created:',e);
+    }
+   }
+
+   localStorage.setItem(K,payload);
+
+   if(localStorage.getItem(K)!==payload)
+    throw new Error('Restored data verification failed');
+
+  }catch(restoreError){
+   if(rollbackRaw!==null){
+    try{
+     localStorage.setItem(K,rollbackRaw);
+
+     if(localStorage.getItem(K)!==rollbackRaw)
+      throw new Error('Rollback verification failed');
+
+     LAST_GOOD_RAW=rollbackRaw;
+
+    }catch(rollbackError){
+     throw new Error(
+      'Restore failed and previous data could not be verified in primary storage. Raw preservation copy may still exist. Restore error: '+
+      (restoreError.message||restoreError)+
+      '. Rollback error: '+
+      (rollbackError.message||rollbackError)
+     );
+    }
+   }
+
+   throw new Error(
+    'Restore failed. Previous data was preserved. '+
+    (restoreError.message||restoreError)
+   );
+  }
+
+  LAST_GOOD_RAW=payload;
+  S=next;
+  BOOT_RAW=payload;
+  BOOT_DATA=next;
+  RECOVERY=false;
+  SAVE_FAILED=false;
+  BOOT_ERROR='';
+  BOOT_READ_FAILED=false;
+
+  render();
+  toast(T('تم استرجاع النسخة الاحتياطية بنجاح','Backup restored successfully'));
+ });
+}
+
 const enqueueSaveOperation=work=>{const result=saveQueue.then(work,work);saveQueue=result.then(()=>{},()=>{});return result};
 
 const save=(scheduleNotifications=true)=>{
