@@ -21,24 +21,20 @@ tests/backup-runtime.test.cjs blob SHA:
 `9d15784d895f8f44a1d79db2b4d3319eb7f07c7b`
 
 
-Latest verified release: v1.180
-Workflow run: #180
-Run ID: 44537443218
-Commit: `dd2caf5498afd63f9ec8b7eb43e97d20450b6186`
+
+Latest verified release: v1.185
+Workflow run: #185
+Run ID: 44578040409
+Commit: `bdb93c80469e2c69c616b13e5f30e7dbbf1e1fb8`
 Workflow conclusion: success
-Automated test suite: passed (exact test count not independently verified)
+Automated test suite: 57 passed, 0 failed
 APK build, identity, signing, packaged web assets, and release publication: verified
 
-Release APK: `enjazi.apk`
-APK size: 4,358,613 bytes
-APK SHA256:
-`08cb2c08c1c3f8fb5797b4a6cbcf1c4654dad9eb2d2c66a2be781e10ca051b98`
+Release URL:
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.185
 
-Latest release URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.180
-
-Latest APK URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.180/enjazi.apk
+Workflow URL:
+https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/44578040409
 
 ### Import review — implementation and automated verification completed
 
