@@ -406,7 +406,17 @@ async function restoreBackupRecord(record){
      if(localStorage.getItem(K)!==rollbackRaw)
       throw new Error('Rollback verification failed');
 
-     LAST_GOOD_RAW=rollbackRaw;
+          try{
+      const rollbackData=JSON.parse(rollbackRaw);
+
+      if(!vld(rollbackData)){
+       LAST_GOOD_RAW=rollbackRaw;
+      }else{
+       console.warn('Rollback data is invalid; keeping the previous last-good value.');
+      }
+     }catch(validationError){
+      console.warn('Rollback data could not be validated; keeping the previous last-good value:',validationError);
+     }
 
     }catch(rollbackError){
      throw new Error(
