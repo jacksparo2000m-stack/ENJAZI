@@ -1458,12 +1458,12 @@ test('bootState protects previous data during migration failures', async t => {
       console
     };
 
-    vm.runInNewContext(
-      migrationSource + '\n' + bootSource + '\n;bootState()',
-      context
-    );
+    const bootState = vm.runInNewContext(
+  migrationSource + '\n' + bootSource + '\n;bootState',
+  context
+);
 
-    await context.bootState?.();
+await bootState();
 
     return {
       context,
