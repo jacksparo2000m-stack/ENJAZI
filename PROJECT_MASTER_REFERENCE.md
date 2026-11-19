@@ -20,24 +20,25 @@ index.html blob SHA:
 tests/backup-runtime.test.cjs blob SHA:
 `9d15784d895f8f44a1d79db2b4d3319eb7f07c7b`
 
-Latest verified release: v1.174
-Workflow run: #174
-Run ID: 44534133463
-Commit: `3bf537837f084100d4b5328aa47142f434fce40c`
+
+Latest verified release: v1.180
+Workflow run: #180
+Run ID: 44537443218
+Commit: `dd2caf5498afd63f9ec8b7eb43e97d20450b6186`
 Workflow conclusion: success
 Automated test suite: passed (exact test count not independently verified)
 APK build, identity, signing, packaged web assets, and release publication: verified
 
 Release APK: `enjazi.apk`
-APK size: 4,358,273 bytes
+APK size: 4,358,613 bytes
 APK SHA256:
-`e4c25588d680f3d68548d11d28bb5782795b9dc5f8345a9c3c41656bc672f02f`
+`08cb2c08c1c3f8fb5797b4a6cbcf1c4654dad9eb2d2c66a2be781e10ca051b98`
 
 Latest release URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.174
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.180
 
 Latest APK URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.174/enjazi.apk
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.180/enjazi.apk
 
 ### Import review — implementation and automated verification completed
 
@@ -205,6 +206,21 @@ Work in this order unless the user explicitly changes priorities.
 - After each release, ask only for a safe, relevant confirmation (e.g. app opens and existing subjects remain); do not ask the user to create artificial tasks just to satisfy diagnostics.
 
 ## 7. Change log
+
+
+### 2026-11-19 — Restore automated tests and v1.180 release
+
+- Added automated tests for restoreBackupRecord.
+- Covered successful restore, failed restore with verified rollback,
+  failed rollback, and raw preservation failure.
+- Updated source regression assertions to support the multiline restore function.
+- GitHub Actions run #180 succeeded.
+- APK build, identity, signing, packaged assets, and release publication verified.
+- Release v1.180 published successfully.
+- Restore implementation review is still in progress.
+- Migration, recovery, and read-only diagnostics remain pending.
+- Phase 1 Data Protection remains open.
+
 
 ### 2026-11-19 — Import review verified and v1.174 released
 
