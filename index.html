@@ -1164,9 +1164,18 @@ async function bootState(){
 
   LAST_GOOD_RAW=BOOT_RAW;
 
-  if(migrated!==BOOT_RAW){
+    if(migrated!==BOOT_RAW){
+   const previousRaw=BOOT_RAW;
+
    try{
-    await backupStore(BOOT_RAW,'migration');
+    await backupStore(previousRaw,'migration');
+   }catch(e){
+    BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ نسخة ما قبل الترحيل: '+(e.message||e);
+    RECOVERY=true;
+    return;
+   }
+
+   try{
     trace('before storage write',migrated);
 
     localStorage.setItem(K,migrated);
@@ -1176,8 +1185,26 @@ async function bootState(){
 
     BOOT_RAW=migrated;
     LAST_GOOD_RAW=migrated;
-   }catch(e){
-    BOOT_ERROR='تم تحميل البيانات لكن تعذر حفظ ترحيلها: '+(e.message||e);
+
+   }catch(migrationError){
+    let rollbackError=null;
+
+    try{
+     localStorage.setItem(K,previousRaw);
+
+     if(localStorage.getItem(K)!==previousRaw)
+      throw new Error('Migration rollback verification failed');
+
+    }catch(e){
+     rollbackError=e;
+    }
+
+    if(rollbackError){
+     BOOT_ERROR='تعذر حفظ الترحيل والتحقق من استعادة البيانات السابقة. توجد نسخة ما قبل الترحيل محفوظة في النسخ الاحتياطية. خطأ الترحيل: '+(migrationError.message||migrationError)+'. خطأ الاستعادة: '+(rollbackError.message||rollbackError);
+    }else{
+     BOOT_ERROR='تعذر حفظ الترحيل؛ تمت استعادة البيانات السابقة والتحقق منها: '+(migrationError.message||migrationError);
+    }
+
     RECOVERY=true;
    }
   }
