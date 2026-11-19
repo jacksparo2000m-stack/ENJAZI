@@ -418,6 +418,13 @@ async function restoreBackupRecord(record){
     }
    }
 
+      if(rollbackRaw===null){
+    throw new Error(
+     'Restore failed. No previous data was available to roll back to. '+
+     (restoreError.message||restoreError)
+    );
+   }
+
    throw new Error(
     'Restore failed. Previous data was preserved. '+
     (restoreError.message||restoreError)
