@@ -428,3 +428,42 @@ test('UI refresh and web reminder polling use separate timers', () => {
   // Preserve the existing background UI refresh guard.
   assert.match(timers[1], /CAP&&LN&&document\.hidden/);
 });
+
+test('storage diagnostics only reads app data and backup records', () => {
+  const start = html.indexOf('diag:async()=>{');
+  const end = html.indexOf('persist:async()=>', start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const diagnostics = html.slice(start, end);
+
+  // Diagnostics must not directly modify primary app storage.
+  assert.match(diagnostics, /localStorage\.getItem\(K\)/);
+  assert.doesNotMatch(
+    diagnostics,
+    /localStorage\.(?:setItem|removeItem|clear)\s*\(/
+  );
+
+  // Diagnostics may only inspect audit and backup records.
+  assert.match(diagnostics, /await auditList\(\)/);
+  assert.match(diagnostics, /await backupList\(\)/);
+  assert.doesNotMatch(
+    diagnostics,
+    /\b(?:auditRecord|auditCapture|backupStore|restoreBackupRecord)\s*\(/
+  );
+
+  // Both record-list operations must use readonly transactions.
+  const auditStart = html.indexOf('async function auditList()');
+  const auditEnd = html.indexOf('function auditCapture(', auditStart);
+  assert.ok(auditStart >= 0 && auditEnd > auditStart);
+
+  const auditReader = html.slice(auditStart, auditEnd);
+  assert.match(auditReader, /transaction\(AUDIT_STORE,'readonly'\)/);
+
+  const backupStart = html.indexOf('async function backupList()');
+  const backupEnd = html.indexOf('async function restoreBackupRecord(', backupStart);
+  assert.ok(backupStart >= 0 && backupEnd > backupStart);
+
+  const backupReader = html.slice(backupStart, backupEnd);
+  assert.match(backupReader, /transaction\(BACKUP_STORE,'readonly'\)/);
+});
