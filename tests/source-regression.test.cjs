@@ -44,6 +44,23 @@ test('subject deletion unlinks associated tasks without deleting them', () => {
   assert.match(html, /dg:i=>\{[\s\S]*?unlinkItems\(i,g\.it\);[\s\S]*?S\.groups=S\.groups\.filter\(a=>a\.id!==i\);/);
 });
 
+test('group rename changes only the display name and preserves its identity and contents', () => {
+  assert.match(html, /eg:i=>\{[\s\S]*?const G=S\.groups\.find\(a=>a\.id===i\);[\s\S]*?G\.n=n;[\s\S]*?up\(\);[\s\S]*?\}/);
+
+  const renameStart = html.indexOf('eg:i=>{');
+  const renameEnd = html.indexOf('ai:i=>', renameStart);
+  assert.ok(renameStart >= 0 && renameEnd > renameStart);
+
+  const renameHandler = html.slice(renameStart, renameEnd);
+
+  assert.match(renameHandler, /G\.n=n/);
+  assert.doesNotMatch(renameHandler, /G\.id\s*=/);
+  assert.doesNotMatch(renameHandler, /unlinkItems\s*\(/);
+  assert.match(renameHandler, /if\(!n\)return/);
+  assert.match(renameHandler, /if\(n===G\.n\)return/);
+});
+
+
 test('task editor and task list support subject association', () => {
   assert.match(html, /D\.subjectId=su\?su\.value:''/);
   assert.match(html, /!f\.subjectId\|\|x\.subjectId===f\.subjectId/);
