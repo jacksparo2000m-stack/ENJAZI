@@ -1628,7 +1628,7 @@ test('recovery reset preserves old data before creating fresh state', async () =
     assert.equal(result.values.get('pt2'), result.oldRaw);
     assert.equal(result.values.size, 1);
     assert.equal(result.context.RECOVERY, true);
-    assert.equal(result.backupCalls.length, 0);
+    assert.equal(result.backupCalls.length, 1);
     assert.equal(result.alerts.length, 1);
   })();
 
