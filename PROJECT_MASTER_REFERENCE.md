@@ -335,6 +335,24 @@ Important status distinction:
 
 
   2026-11-20 — New Product Improvements Roadmap
+  In-app Back Navigation — CONFIRMED / NOT IMPLEMENTED
+
+User requirement:
+Fix the Back behavior so navigating backward inside ENJAZI does not unexpectedly exit the application.
+
+Expected behavior:
+
+1. From a nested section, Back returns to the previous screen or exits the current section.
+2. From a details screen, Back returns to the list or screen that opened it.
+3. Only from the home screen should Back invoke the app's defined exit behavior.
+4. Review both the in-app Back button and Android system Back navigation.
+5. Keep navigation behavior consistent across screens and avoid breaking existing navigation flows.
+
+Status: AGREED REQUIREMENT — IMPLEMENTATION NOT STARTED.
+
+Verification: Test nested sections, details screens, home screen, Android system Back, and the in-app Back control.
+
+Data safety: Navigation changes must not modify, delete, or reset user data.
 
 Status: AGREED REQUIREMENTS — IMPLEMENTATION NOT STARTED.
 
