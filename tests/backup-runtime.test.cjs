@@ -1522,4 +1522,130 @@ await bootState();
 });
 
 
+test('recovery reset preserves old data before creating fresh state', async () => {
+  const start = html.indexOf("if(a==='reset'&&BOOT_RAW!==null)");
+  const end = html.indexOf('\n return}', start);
+
+  assert.ok(start >= 0 && end > start, 'recovery reset handler should exist');
+
+  const resetSource = html.slice(start, end);
+
+  async function runScenario(mode) {
+    const oldRaw = JSON.stringify({
+      lang: 'ar',
+      tasks: [{ id: 'old-task' }],
+      groups: []
+    });
+
+    const values = new Map([['pt2', oldRaw]]);
+    const backupCalls = [];
+    const alerts = [];
+
+    const localStorage = {
+      getItem(key) {
+        return values.has(key) ? values.get(key) : null;
+      },
+
+      setItem(key, value) {
+        if (mode === 'raw-backup-failure' && key.startsWith('pt2_recovery_')) {
+          throw new Error('Simulated raw recovery backup failure');
+        }
+
+        values.set(key, String(value));
+      }
+    };
+
+    const context = {
+      a: 'reset',
+      BOOT_RAW: oldRaw,
+      BOOT_DATA: JSON.parse(oldRaw),
+      BOOT_ERROR: 'Recovery test',
+      BOOT_READ_FAILED: false,
+      RECOVERY: true,
+      LAST_GOOD_RAW: oldRaw,
+      S: JSON.parse(oldRaw),
+      K: 'pt2',
+
+      localStorage,
+      confirm: () => true,
+      alert: message => alerts.push(message),
+      console,
+
+      DEFAULT_STATE: () => ({
+        lang: 'ar',
+        th: 'light',
+        fs: 'm',
+        tasks: [],
+        groups: [],
+        cats: [],
+        notes: []
+      }),
+
+      vld: () => '',
+
+      backupStore: async (...args) => {
+        backupCalls.push(args);
+
+        if (mode === 'fresh-backup-failure' && args.length === 1) {
+          throw new Error('Simulated fresh snapshot failure');
+        }
+
+        return true;
+      },
+
+      JSON,
+      Date,
+      Error,
+      Promise
+    };
+
+    const run = vm.runInNewContext(
+      'async function run(){' + resetSource + '\n}\nrun',
+      context
+    );
+
+    await run();
+
+    return { oldRaw, values, backupCalls, alerts, context };
+  }
+
+  await (async () => {
+    const result = await runScenario('success');
+    const recoveryKey = [...result.values.keys()].find(
+      key => key.startsWith('pt2_recovery_')
+    );
+
+    assert.ok(recoveryKey, 'old data should have a separate recovery copy');
+    assert.equal(result.values.get(recoveryKey), result.oldRaw);
+    assert.notEqual(result.values.get('pt2'), result.oldRaw);
+    assert.equal(JSON.parse(result.values.get('pt2')).tasks.length, 0);
+    assert.equal(result.context.RECOVERY, false);
+  })();
+
+  await (async () => {
+    const result = await runScenario('raw-backup-failure');
+
+    assert.equal(result.values.get('pt2'), result.oldRaw);
+    assert.equal(result.values.size, 1);
+    assert.equal(result.context.RECOVERY, true);
+    assert.equal(result.backupCalls.length, 0);
+    assert.equal(result.alerts.length, 1);
+  })();
+
+  await (async () => {
+    const result = await runScenario('fresh-backup-failure');
+    const recoveryKey = [...result.values.keys()].find(
+      key => key.startsWith('pt2_recovery_')
+    );
+
+    assert.ok(recoveryKey);
+    assert.equal(result.values.get(recoveryKey), result.oldRaw);
+    assert.equal(result.values.get('pt2'), result.oldRaw);
+    assert.equal(result.context.RECOVERY, true);
+    assert.equal(result.alerts.length, 1);
+  })();
+});
+
+
+
 
