@@ -1547,12 +1547,31 @@ test('recovery reset preserves old data before creating fresh state', async () =
       },
 
       setItem(key, value) {
-        if (mode === 'raw-backup-failure' && key.startsWith('pt2_recovery_')) {
-          throw new Error('Simulated raw recovery backup failure');
-        }
+  value = String(value);
 
-        values.set(key, String(value));
-      }
+  if (mode === 'raw-backup-failure' && key.startsWith('pt2_recovery_')) {
+    throw new Error('Simulated raw recovery backup failure');
+  }
+
+  if (
+    key === 'pt2' &&
+    value !== oldRaw &&
+    (mode === 'fresh-write-failure' || mode === 'rollback-failure')
+  ) {
+    values.set(key, 'corrupted-fresh-data');
+    return;
+  }
+
+  if (
+    key === 'pt2' &&
+    value === oldRaw &&
+    mode === 'rollback-failure'
+  ) {
+    throw new Error('Simulated recovery rollback failure');
+  }
+
+  values.set(key, value);
+}
     };
 
     const context = {
