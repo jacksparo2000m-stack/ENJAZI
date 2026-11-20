@@ -51,7 +51,7 @@ Automated tests cover these failure scenarios.
 GitHub Actions runs #173 and #174 succeeded.
 Release v1.174 was published successfully.
 
-Important: Import review is complete. Restore, migration, recovery, and read-only diagnostics still require their planned reviews before Phase 1 can be closed.
+Important: Import, restore, migration, recovery, and read-only diagnostics reviews are complete and verified. See the Phase 1 review status below.
 
 Ordinary-save review:
 - Primary storage failure preserves the previous stored data.
@@ -182,12 +182,14 @@ All eight planned reviews have been implemented, reviewed, and verified through 
 
 Work in this order unless the user explicitly changes priorities.
 
-### Phase 1 — Data integrity and protection (current)
-- Complete backup storage audit and safe retention behavior.
-- Verify import, restore, migration, recovery, and ordinary-save backup paths.
-- Keep diagnostics read-only.
-- Protect existing user data throughout.
+### Phase 1 — Data integrity and protection (COMPLETED / VERIFIED)
+- Backup storage audit and safe retention behavior completed.
+- Import, restore, migration, recovery, and ordinary-save backup paths reviewed and verified.
+- Storage diagnostics record-reading behavior reviewed and verified.
+- Automated regression tests passed: 68 passed, 0 failed in workflow #202 attempt 2.
+- Existing user data protection requirements reviewed across all eight planned areas.
 
+  
 ### Phase 2 — Materials and achievement history
 - Rename an entire subject group.
 - Rename an individual subject.
