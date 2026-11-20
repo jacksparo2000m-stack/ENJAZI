@@ -193,7 +193,7 @@ Work in this order unless the user explicitly changes priorities.
   
 ### Phase 2 — Materials and achievement history
 
-Status: IMPLEMENTATION AND SOURCE REGRESSION TESTS ADDED — AUTOMATED VERIFICATION PENDING.
+Status: COMPLETED / VERIFIED.
 
 Implemented in `index.html`:
 - Added group rename handler (`eg`).
@@ -210,10 +210,13 @@ Source regression coverage added in `tests/source-regression.test.cjs`:
 - Names longer than 300 characters are rejected.
 - Rename buttons are associated with the correct IDs.
 
-Pending:
-- Run the automated test suite through GitHub Actions.
-- Verify the exact test results before marking this milestone complete.
-
+Verification:
+- GitHub Actions run #219 succeeded.
+- Full automated test suite: 70 passed, 0 failed.
+- npm run check succeeded.
+- Android native build succeeded.
+- APK identity/signing and packaged web assets verified.
+- Release v1.219 published successfully.
   
 ### Phase 3 — Android system Back behavior
 - Support the device/system back action as well as the in-app back control.
