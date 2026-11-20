@@ -1696,3 +1696,136 @@ test('recovery reset preserves old data before creating fresh state', async () =
 });
 
 
+test('recovery start protects the empty initial state before committing it', async () => {
+  const start = html.indexOf(
+    "if(a==='start'&&BOOT_RAW===null&&!BOOT_READ_FAILED)"
+  );
+  const end = html.indexOf("\n if(a==='reset'", start);
+
+  assert.ok(start >= 0 && end > start, 'recovery start handler should exist');
+
+  const startSource = html.slice(start, end);
+
+  async function runScenario(mode) {
+    const values = new Map();
+    const backupCalls = [];
+    const alerts = [];
+    const toasts = [];
+    let writeCalls = 0;
+
+    const localStorage = {
+      getItem(key) {
+        return values.has(key) ? values.get(key) : null;
+      },
+
+      setItem(key, value) {
+        writeCalls++;
+        if (mode === 'storage-write-failure') {
+          throw new Error('Simulated initial storage write failure');
+        }
+        values.set(key, String(value));
+      }
+    };
+
+    const context = {
+      a: 'start',
+      BOOT_RAW: null,
+      BOOT_READ_FAILED: false,
+      RECOVERY: true,
+      BOOT_ERROR: 'No readable local data',
+      S: { tasks: [{ id: 'unchanged' }] },
+      LAST_GOOD_RAW: null,
+      BOOT_DATA: null,
+      K: 'pt2',
+
+      localStorage,
+      confirm: () => true,
+      alert: message => alerts.push(message),
+      toast: message => toasts.push(message),
+      render: () => {},
+      LN: null,
+      initN: () => {},
+
+      DEFAULT_STATE: () => ({
+        lang: 'ar',
+        th: 'light',
+        fs: 'm',
+        tasks: [],
+        groups: [],
+        cats: [],
+        notes: []
+      }),
+
+      backupStore: async (...args) => {
+        backupCalls.push(args);
+
+        if (mode === 'backup-failure') {
+          throw new Error('Simulated initial backup failure');
+        }
+
+        return true;
+      },
+
+      JSON,
+      Date,
+      Error,
+      Promise
+    };
+
+    const run = vm.runInNewContext(
+      'async function run(){' + startSource + '\n}\nrun',
+      context
+    );
+
+    await run();
+
+    return {
+      values,
+      backupCalls,
+      alerts,
+      toasts,
+      writeCalls,
+      context
+    };
+  }
+
+  await t.test('successful start saves and verifies fresh state', async () => {
+    const result = await runScenario('success');
+    const savedRaw = result.values.get('pt2');
+
+    assert.ok(savedRaw);
+    assert.deepEqual(JSON.parse(savedRaw).tasks, []);
+    assert.equal(result.backupCalls.length, 1);
+    assert.equal(result.backupCalls[0][0], savedRaw);
+    assert.equal(result.writeCalls, 1);
+    assert.equal(result.context.RECOVERY, false);
+    assert.equal(result.context.BOOT_RAW, savedRaw);
+    assert.deepEqual(result.context.S.tasks, []);
+    assert.equal(result.alerts.length, 0);
+  });
+
+  await t.test('backup failure prevents initial storage write', async () => {
+    const result = await runScenario('backup-failure');
+
+    assert.equal(result.values.has('pt2'), false);
+    assert.equal(result.backupCalls.length, 1);
+    assert.equal(result.writeCalls, 0);
+    assert.equal(result.context.RECOVERY, true);
+    assert.deepEqual(result.context.S.tasks, [{ id: 'unchanged' }]);
+    assert.equal(result.alerts.length, 1);
+  });
+
+  await t.test('storage write failure does not commit fresh in-memory state', async () => {
+    const result = await runScenario('storage-write-failure');
+
+    assert.equal(result.values.has('pt2'), false);
+    assert.equal(result.backupCalls.length, 1);
+    assert.equal(result.writeCalls, 1);
+    assert.equal(result.context.RECOVERY, true);
+    assert.deepEqual(result.context.S.tasks, [{ id: 'unchanged' }]);
+    assert.equal(result.alerts.length, 1);
+  });
+});
+
+
+
