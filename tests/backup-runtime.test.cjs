@@ -1696,7 +1696,7 @@ test('recovery reset preserves old data before creating fresh state', async () =
 });
 
 
-test('recovery start protects the empty initial state before committing it', async () => {
+test('recovery start protects the empty initial state before committing it', async t => {
   const start = html.indexOf(
     "if(a==='start'&&BOOT_RAW===null&&!BOOT_READ_FAILED)"
   );
