@@ -78,6 +78,7 @@ test('subject rename changes only its display name and preserves its identity an
   assert.doesNotMatch(renameHandler, /unlinkItems\s*\(/);
   assert.match(renameHandler, /if\(!n\)return/);
   assert.match(renameHandler, /if\(n===I\.n\)return/);
+  assert.match(renameHandler, /if\(n\.length>300\)/);
 
   assert.match(html, /data-a="ei" data-i="\$\{I\.id\}"/);
 });
