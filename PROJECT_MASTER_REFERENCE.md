@@ -22,20 +22,19 @@ tests/backup-runtime.test.cjs blob SHA:
 
 
 
-Latest verified release: v1.185
-Workflow run: #185
-Run ID: 44578040409
-Commit: `bdb93c80469e2c69c616b13e5f30e7dbbf1e1fb8`
+Latest verified release: v1.191
+Workflow run: #191
+Run ID: 44581021766
+Commit: `3f772180129d48c084d02c60fbd36d05f08d6be7`
 Workflow conclusion: success
-Automated test suite: 57 passed, 0 failed
+Automated test suite: 62 passed, 0 failed
 APK build, identity, signing, packaged web assets, and release publication: verified
 
 Release URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.185
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.191
 
 Workflow URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/44578040409
-
+https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/44581021766
 ### Import review — implementation and automated verification completed
 
 Verified import behavior:
@@ -211,6 +210,7 @@ Work in this order unless the user explicitly changes priorities.
 
 ## 7. Change log
 
+2026-11-19 — Migration review verified and v1.191 released
 
 ### 2026-11-19 — Restore automated tests and v1.180 release
 
