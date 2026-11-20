@@ -161,7 +161,7 @@ Restore review verification:
 - Full test suite: 57 passed, 0 failed.
 
 Remaining Phase 1 work:
-- Review migration and recovery backup paths.
+- Review recovery backup paths.
 - Confirm diagnostics remain read-only.
 Do not mark Phase 1 complete until all remaining paths are reviewed
 and verified.
