@@ -1651,6 +1651,7 @@ test('recovery reset preserves old data before creating fresh state', async () =
     assert.equal(result.alerts.length, 1);
   })();
 
+  
   await (async () => {
     const result = await runScenario('fresh-backup-failure');
     const recoveryKey = [...result.values.keys()].find(
@@ -1663,8 +1664,35 @@ test('recovery reset preserves old data before creating fresh state', async () =
     assert.equal(result.context.RECOVERY, true);
     assert.equal(result.alerts.length, 1);
   })();
+
+  await (async () => {
+    const result = await runScenario('fresh-write-failure');
+    const recoveryKey = [...result.values.keys()].find(
+      key => key.startsWith('pt2_recovery_')
+    );
+
+    assert.ok(recoveryKey);
+    assert.equal(result.values.get(recoveryKey), result.oldRaw);
+    assert.equal(result.values.get('pt2'), result.oldRaw);
+    assert.equal(result.context.RECOVERY, true);
+    assert.equal(result.alerts.length, 1);
+    assert.match(result.alerts[0], /previous data was restored and verified/i);
+  })();
+
+  await (async () => {
+    const result = await runScenario('rollback-failure');
+    const recoveryKey = [...result.values.keys()].find(
+      key => key.startsWith('pt2_recovery_')
+    );
+
+    assert.ok(recoveryKey);
+    assert.equal(result.values.get(recoveryKey), result.oldRaw);
+    assert.equal(result.values.get('pt2'), 'corrupted-fresh-data');
+    assert.equal(result.context.RECOVERY, true);
+    assert.equal(result.alerts.length, 1);
+    assert.match(result.alerts[0], /could not be restored/i);
+    assert.match(result.alerts[0], /Simulated recovery rollback failure/);
+  })();
 });
-
-
 
 
