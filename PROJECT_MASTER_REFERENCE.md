@@ -192,10 +192,29 @@ Work in this order unless the user explicitly changes priorities.
 
   
 ### Phase 2 — Materials and achievement history
-- Rename an entire subject group.
-- Rename an individual subject.
-- Verify references and associated tasks/history remain correct.
 
+Status: IMPLEMENTATION AND SOURCE REGRESSION TESTS ADDED — AUTOMATED VERIFICATION PENDING.
+
+Implemented in `index.html`:
+- Added group rename handler (`eg`).
+- Added subject rename handler (`ei`).
+- Both handlers modify only the display name and preserve stable IDs and existing associations.
+- Both reject names longer than 300 characters.
+- Added rename buttons to the group and subject detail views.
+
+Source regression coverage added in `tests/source-regression.test.cjs`:
+- Group rename preserves identity and contents.
+- Subject rename preserves identity and links.
+- Rename handlers do not call `unlinkItems`.
+- Cancelled and unchanged names are ignored.
+- Names longer than 300 characters are rejected.
+- Rename buttons are associated with the correct IDs.
+
+Pending:
+- Run the automated test suite through GitHub Actions.
+- Verify the exact test results before marking this milestone complete.
+
+  
 ### Phase 3 — Android system Back behavior
 - Support the device/system back action as well as the in-app back control.
 - Handle pages, dialogs, and navigation correctly.
