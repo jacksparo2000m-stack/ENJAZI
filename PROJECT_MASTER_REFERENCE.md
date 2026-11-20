@@ -148,7 +148,9 @@ Completed Phase 1 reviews:
 - Ordinary-save backup behavior.
 - Import preservation, verification, and rollback behavior.
 - Restore preservation, verification, and rollback behavior.
+- Migration backup, write verification, and rollback behavior.
 
+  
 Restore review verification:
 - Restore validates backup records before applying them.
 - Current data is preserved before restore.
