@@ -87,7 +87,8 @@ if "PersistentTaskRestoreReceiver" not in xml:
     if "</application>" not in xml:
         raise SystemExit("Could not locate application closing tag in AndroidManifest.xml")
     xml = xml.replace("</application>", receiver + "</application>", 1)
-    if "PriorityOneTaskReceiver" not in xml:
+
+if "PriorityOneTaskReceiver" not in xml:
     receiver = '''    <receiver
         android:name=".PriorityOneTaskReceiver"
         android:enabled="true"
@@ -96,7 +97,8 @@ if "PersistentTaskRestoreReceiver" not in xml:
     if "</application>" not in xml:
         raise SystemExit("Could not locate application closing tag in AndroidManifest.xml")
     xml = xml.replace("</application>", receiver + "</application>", 1)
-manifest.write_text(xml, encoding="utf-8")
+    
+    manifest.write_text(xml, encoding="utf-8")
 
 if "PersistentTasksPlugin.class" not in main.read_text(encoding="utf-8"):
     raise SystemExit("PersistentTasksPlugin registration verification failed")
