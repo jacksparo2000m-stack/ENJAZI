@@ -14,6 +14,7 @@ for filename in (
     "PersistentTaskNotifications.java",
     "PersistentTasksPlugin.java",
     "PersistentTaskRestoreReceiver.java",
+    "PriorityOneTaskReceiver.java",
 ):
     source = SOURCE_DIR / filename
     if not source.is_file():
@@ -82,6 +83,15 @@ if "PersistentTaskRestoreReceiver" not in xml:
             <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
         </intent-filter>
     </receiver>
+'''
+    if "</application>" not in xml:
+        raise SystemExit("Could not locate application closing tag in AndroidManifest.xml")
+    xml = xml.replace("</application>", receiver + "</application>", 1)
+    if "PriorityOneTaskReceiver" not in xml:
+    receiver = '''    <receiver
+        android:name=".PriorityOneTaskReceiver"
+        android:enabled="true"
+        android:exported="false" />
 '''
     if "</application>" not in xml:
         raise SystemExit("Could not locate application closing tag in AndroidManifest.xml")
