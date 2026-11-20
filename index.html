@@ -735,7 +735,22 @@ cx:()=>{D=null;$('#sh').hidden=1},sv:()=>{sync();if(!D.t.trim())return toast(T('
 const n=S.tasks.findIndex(x=>x.id===D.id);if(n<0)S.tasks.push(D);else{const wasDone=!!S.tasks[n].x;if(wasDone)lkd(S.tasks[n],-1);S.tasks[n]=D;if(D.x)lkd(D,1)}
 if(D.c&&!S.cats.includes(D.c))S.cats.push(D.c);D=null;$('#sh').hidden=1;up();pins()},
 og:i=>{P={g:i,i:null};render()},oi:i=>{P.i=i;render()},bk:()=>{P.i?P.i=null:P.g=null;render()},
-ag:()=>{const n=pr(T('اسم القسم؟ (مثال: مواد الكلية)','Section name?'));if(n){S.groups.push({id:uid(),n,it:[]});up()}}, eg:i=>{  const G=S.groups.find(a=>a.id===i);  if(!G)return;   const n=pr(   T('اسم القسم الجديد؟','New section name?'),   G.n  );   if(!n)return;   if(n.length>300)   return toast(T('اسم القسم طويل جدًا','Section name is too long'));   if(n===G.n)return;   G.n=n;  up(); }, eg:i=>{  const G=S.groups.find(a=>a.id===i);  if(!G)return;   const n=pr(   T('اسم القسم الجديد؟','New section name?'),   G.n  );   if(!n)return;   if(n.length>300)   return toast(T('اسم القسم طويل جدًا','Section name is too long'));   if(n===G.n)return;   G.n=n;  up(); },
+
+ag:()=>{const n=pr(T('اسم القسم؟ (مثال: مواد الكلية)','Section name?'));if(n){S.groups.push({id:uid(),n,it:[]});up()}}, eg:i=>{
+  const G=S.groups.find(a=>a.id===i);
+  if(!G)return;
+  const n=pr(
+    T('اسم القسم الجديد؟','New section name?'),
+    G.n
+  );
+  if(!n)return;
+  if(n.length>300)
+    return toast(T('اسم القسم طويل جدًا','Section name is too long'));
+  if(n===G.n)return;
+  G.n=n;
+  up();
+},
+
 ai:i=>{const n=pr(T('اسم المادة أو المشروع؟','Name?'));if(!n)return;const g=S.groups.find(a=>a.id===i);if(!g)return;const t=askTotal(T('العدد الكلي للمحاضرات/الأجزاء؟ (اختياري — اتركه فاضي لو مش عارف)','Total lectures/parts? (optional — leave empty if unknown)'));if(t===null)return;g.it.push({id:uid(),n:n.trim(),total:t,ls:[]});up()},
 dg:i=>{if(confirm(T('حذف القسم بكل ما فيه؟','Delete section?'))){const g=S.groups.find(a=>a.id===i);if(g)unlinkItems(i,g.it);S.groups=S.groups.filter(a=>a.id!==i);P={g:null,i:null};up()}},
 al:()=>{const e=$('#nl'),I=cur(),a=e.value.split(/[,،]/).map(x=>x.trim()).filter(Boolean);if(!a.length)a.push(T('محاضرة ','Lecture ')+nx(I));a.forEach(n=>I.ls.push({id:uid(),n,at:Date.now()}));up()},
