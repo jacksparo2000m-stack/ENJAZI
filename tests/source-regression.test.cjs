@@ -58,6 +58,7 @@ test('group rename changes only the display name and preserves its identity and 
   assert.doesNotMatch(renameHandler, /unlinkItems\s*\(/);
     assert.match(renameHandler, /if\(!n\)return/);
   assert.match(renameHandler, /if\(n===G\.n\)return/);
+  assert.match(renameHandler, /if\(n\.length>300\)/);
 
   assert.match(html, /data-a="eg" data-i="\$\{G\.id\}"/);
 });
