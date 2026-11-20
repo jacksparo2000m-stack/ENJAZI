@@ -8,6 +8,7 @@
 - Active working branch: `fix/primary-storage-before-backup`
 - Main application: `index.html`
 - Backup runtime tests: `tests/backup-runtime.test.cjs`
+- - Source regression tests: `tests/source-regression.test.cjs`
 - Android workflow: `.github/workflows/android.yml`
 
 
@@ -297,3 +298,15 @@ Important status distinction:
 - This achievement-log feature is a separate product improvement.
 - It does NOT mean Phase 1 Data Protection is complete.
 - Import, restore, migration, recovery, and read-only diagnostics still require their planned reviews and verification.
+
+
+  ### 2026-11-20 — Phase 1 Data Protection completed and v1.202 verified
+
+- Completed all eight planned Phase 1 reviews.
+- Verified Recovery Reset, Recovery Start, and storage diagnostics.
+- Full automated test suite: 68 passed, 0 failed.
+- GitHub Actions run #202 attempt 2 succeeded.
+- APK build, identity/signing, packaged assets, and release publication verified.
+- Release v1.202 published successfully.
+- Phase 1 — Data integrity and protection: COMPLETED / VERIFIED.
+- Next planned milestone: Phase 2 — Materials and achievement history.
