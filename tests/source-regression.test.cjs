@@ -508,3 +508,27 @@ test('storage diagnostics only reads app data and backup records', () => {
   const backupReader = html.slice(backupStart, backupEnd);
   assert.match(backupReader, /transaction\(BACKUP_STORE,'readonly'\)/);
 });
+
+test('native notification installer copies and registers the priority-one receiver', () => {
+  const installer = fs.readFileSync(
+    path.join(root, 'tools/install_native_notifications.py'),
+    'utf8'
+  );
+
+  // Copy the new receiver into the generated Android project.
+  assert.match(installer, /"PriorityOneTaskReceiver\.java"/);
+
+  // Register both receivers independently.
+  assert.match(installer, /if "PersistentTaskRestoreReceiver" not in xml:/);
+  assert.match(installer, /if "PriorityOneTaskReceiver" not in xml:/);
+
+  // Save the manifest outside the conditional registration blocks.
+  assert.match(
+    installer,
+    /^manifest\.write_text\(xml, encoding="utf-8"\)$/m
+  );
+
+  // Verify both receivers after writing the manifest.
+  assert.match(installer, /if "PersistentTaskRestoreReceiver" not in final_manifest:/);
+  assert.match(installer, /if "PriorityOneTaskReceiver" not in final_manifest:/);
+});
