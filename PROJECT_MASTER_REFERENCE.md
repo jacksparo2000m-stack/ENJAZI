@@ -8,7 +8,7 @@
 - Active working branch: `fix/primary-storage-before-backup`
 - Main application: `index.html`
 - Backup runtime tests: `tests/backup-runtime.test.cjs`
-- - Source regression tests: `tests/source-regression.test.cjs`
+-  Source regression tests: `tests/source-regression.test.cjs`
 - Android workflow: `.github/workflows/android.yml`
 
 
