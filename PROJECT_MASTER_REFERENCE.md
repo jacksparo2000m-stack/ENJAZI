@@ -15,11 +15,13 @@ Latest branch snapshot checked while preparing this reference:
 Branch: `fix/primary-storage-before-backup`
 
 index.html blob SHA:
-`6e0b44981f699cca6cb9895fdb0d1b60b98445a3`
+`c1f3d10cf576b608c907ecc481719b4a7c815a77`
 
 tests/backup-runtime.test.cjs blob SHA:
-`9d15784d895f8f44a1d79db2b4d3319eb7f07c7b`
+`9793aaf775b74b0c32de36c944945264cfb5ab6e`
 
+tests/source-regression.test.cjs blob SHA:
+`57d2fd367e6ece8fdf0f4ea98f601f288f78d1e5`
 
 
 Latest verified release: v1.202
@@ -151,22 +153,30 @@ Completed Phase 1 reviews:
 - Import preservation, verification, and rollback behavior.
 - Restore preservation, verification, and rollback behavior.
 - Migration backup, write verification, and rollback behavior.
+- Recovery Reset preservation, backup, verification, and rollback behavior.
+- Recovery Start backup-before-write and verification behavior.
+- Storage diagnostics read-only behavior at the record level.
 
-  
-Restore review verification:
-- Restore validates backup records before applying them.
-- Current data is preserved before restore.
-- Restored primary storage is read back and verified.
-- Failed restore attempts rollback and verifies the previous raw data.
-- Invalid rollback data does not overwrite a valid last-good value.
-- Automated restore regression tests passed in workflow #185.
-- Full test suite: 57 passed, 0 failed.
+Recovery review verification:
+- Recovery Reset preserves the previous raw data before creating fresh state.
+- Failed fresh-state writes attempt rollback and verify the previous data.
+- Failed rollback preserves the separate raw recovery copy.
+- Recovery Start creates a backup before writing the initial state.
+- Failed backup prevents the initial state from being written.
+- Failed storage writes do not commit fresh in-memory state.
+- Automated recovery regression tests passed in workflows #199 and #201.
 
-Remaining Phase 1 work:
-- Review recovery backup paths.
-- Confirm diagnostics remain read-only.
-Do not mark Phase 1 complete until all remaining paths are reviewed
-and verified.
+Diagnostics review verification:
+- Diagnostics reads the primary localStorage data without changing it.
+- Audit and backup records are read using readonly IndexedDB transactions.
+- No user records or backup snapshots are inserted, updated, or deleted by the diagnostics record-reading operations.
+- Important caveat: opening IndexedDB may create the database or object stores if they do not already exist. Therefore, diagnostics are read-only at the record level, but not guaranteed to be completely side-effect-free at database-open level.
+- Automated diagnostics regression test passed in workflow #202.
+- Full test suite in workflow #202 attempt 2: 68 passed, 0 failed.
+
+Phase 1 review status:
+All eight planned reviews have been implemented, reviewed, and verified through automated tests.
+
 
 ## 5. Product roadmap — all agreed goals
 
