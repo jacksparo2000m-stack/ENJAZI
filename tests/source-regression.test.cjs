@@ -61,6 +61,26 @@ test('group rename changes only the display name and preserves its identity and 
 });
 
 
+test('subject rename changes only its display name and preserves its identity and links', () => {
+  assert.match(html, /ei:i=>\{[\s\S]*?const G=S\.groups\.find\(a=>a\.id===P\.g\);[\s\S]*?const I=G&&G\.it\.find\(a=>a\.id===i\);[\s\S]*?I\.n=n;[\s\S]*?up\(\);[\s\S]*?\}/);
+
+  const renameStart = html.indexOf('ei:i=>{');
+  const renameEnd = html.indexOf('di:()=>', renameStart);
+  assert.ok(renameStart >= 0 && renameEnd > renameStart);
+
+  const renameHandler = html.slice(renameStart, renameEnd);
+
+  assert.match(renameHandler, /I\.n=n/);
+  assert.doesNotMatch(renameHandler, /I\.id\s*=/);
+  assert.doesNotMatch(renameHandler, /unlinkItems\s*\(/);
+  assert.match(renameHandler, /if\(!n\)return/);
+  assert.match(renameHandler, /if\(n===I\.n\)return/);
+
+  assert.match(html, /data-a="ei" data-i="\$\{I\.id\}"/);
+});
+
+
+
 test('task editor and task list support subject association', () => {
   assert.match(html, /D\.subjectId=su\?su\.value:''/);
   assert.match(html, /!f\.subjectId\|\|x\.subjectId===f\.subjectId/);
