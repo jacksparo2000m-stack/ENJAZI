@@ -113,7 +113,7 @@ final class PersistentTaskNotifications {
         manager.createNotificationChannel(channel);
     }
 
-    private static void show(Context context, int id, String title, String body) {
+    static void show(Context context, int id, String title, String body) {
         if (id <= 0) return;
         Intent launch = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
         PendingIntent content = null;
