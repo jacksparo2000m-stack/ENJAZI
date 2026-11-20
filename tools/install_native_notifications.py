@@ -96,16 +96,19 @@ if "PriorityOneTaskReceiver" not in xml:
 '''
     if "</application>" not in xml:
         raise SystemExit("Could not locate application closing tag in AndroidManifest.xml")
-        xml = xml.replace("</application>", receiver + "</application>", 1)
+    xml = xml.replace("</application>", receiver + "</application>", 1)
 
 manifest.write_text(xml, encoding="utf-8")
 
 if "PersistentTasksPlugin.class" not in main.read_text(encoding="utf-8"):
     raise SystemExit("PersistentTasksPlugin registration verification failed")
+
 final_manifest = manifest.read_text(encoding="utf-8")
 
 if "PersistentTaskRestoreReceiver" not in final_manifest:
     raise SystemExit("PersistentTaskRestoreReceiver manifest verification failed")
 
 if "PriorityOneTaskReceiver" not in final_manifest:
-    raise SystemExit("PriorityOneTaskReceiver manifest verification failed")print("ENJAZI persistent task notification bridge installed.")
+    raise SystemExit("PriorityOneTaskReceiver manifest verification failed")
+
+print("ENJAZI persistent task notification bridge installed.")
