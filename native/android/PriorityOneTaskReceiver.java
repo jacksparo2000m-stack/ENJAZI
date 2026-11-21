@@ -1,3 +1,4 @@
+
 package com.jacksparo.enjazi;
 
 import android.content.BroadcastReceiver;
@@ -15,17 +16,6 @@ public class PriorityOneTaskReceiver extends BroadcastReceiver {
 
         if (!ACTION_TASK_DUE.equals(intent.getAction())) return;
 
-        int id = intent.getIntExtra("notificationId", -1);
-        String title = intent.getStringExtra("title");
-        String body = intent.getStringExtra("body");
-
-        if (id <= 0 || title == null || title.trim().isEmpty()) return;
-
-        PersistentTaskNotifications.show(
-            context,
-            id,
-            title,
-            body == null ? "" : body
-        );
+        PriorityOneTaskScheduler.onAlarm(context, intent);
     }
 }
