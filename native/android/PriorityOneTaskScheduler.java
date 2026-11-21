@@ -28,56 +28,142 @@ final class PriorityOneTaskScheduler {
 
     private PriorityOneTaskScheduler() {}
 
-    static boolean sync(Context context, JSONArray incoming) {
-        JSONArray safe = new JSONArray();
-        Map<String, JSONObject> wanted = new HashMap<>();
+    
+static boolean sync(Context context, JSONArray incoming) {
+    if (incoming == null) return false;
 
-        for (int i = 0; i < incoming.length(); i++) {
-            JSONObject item = incoming.optJSONObject(i);
-            if (item == null) continue;
+    JSONArray safe = new JSONArray();
+    Map<String, JSONObject> wanted = new HashMap<>();
+    Map<Integer, String> notificationOwners = new HashMap<>();
 
-            String taskId = item.optString("taskId", "").trim();
-            String title = item.optString("title", "").trim();
-            int notificationId = item.optInt("notificationId", -1);
-            long dueAt = item.optLong("dueAt", -1);
+    // Validate the entire incoming list before touching saved schedules.
+    for (int i = 0; i < incoming.length(); i++) {
+        JSONObject item = incoming.optJSONObject(i);
+        if (item == null) return false;
 
-            if (taskId.isEmpty() || title.isEmpty()
-                || notificationId <= 0 || dueAt <= 0) {
-                continue;
-            }
+        Object rawTaskId = item.opt("taskId");
+        Object rawTitle = item.opt("title");
+        Object rawNotificationId = item.opt("notificationId");
+        Object rawDueAt = item.opt("dueAt");
 
-            JSONObject normalized = new JSONObject();
-
-            try {
-                normalized.put("taskId", taskId);
-                normalized.put("notificationId", notificationId);
-                normalized.put("title", title);
-                normalized.put("body", item.optString("body", ""));
-                normalized.put("dueAt", dueAt);
-
-                safe.put(normalized);
-                wanted.put(taskId, normalized);
-            } catch (JSONException ignored) {
-            }
-        }
-
-        SharedPreferences prefs =
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-
-        JSONArray previous;
-
-        try {
-            previous = new JSONArray(prefs.getString(KEY, "[]"));
-        } catch (JSONException e) {
-            previous = new JSONArray();
-        }
-
-        // Save the desired state before changing alarms or notifications.
-        if (!prefs.edit().putString(KEY, safe.toString()).commit()) {
+        if (!(rawTaskId instanceof String)
+            || !(rawTitle instanceof String)
+            || !(rawNotificationId instanceof Number)
+            || !(rawDueAt instanceof Number)) {
             return false;
         }
 
-        boolean success = true;
+        String taskId = ((String) rawTaskId).trim();
+        String title = ((String) rawTitle).trim();
+
+        long notificationIdValue =
+            ((Number) rawNotificationId).longValue();
+
+        long dueAt = ((Number) rawDueAt).longValue();
+
+        if (taskId.isEmpty() || title.isEmpty()
+            || notificationIdValue <= 0
+            || notificationIdValue > Integer.MAX_VALUE
+            || dueAt <= 0) {
+            return false;
+        }
+
+        int notificationId = (int) notificationIdValue;
+
+        // Reject duplicate task IDs and notification IDs.
+        if (wanted.containsKey(taskId)
+            || notificationOwners.containsKey(notificationId)) {
+            return false;
+        }
+
+        JSONObject normalized = new JSONObject();
+
+        try {
+            normalized.put("taskId", taskId);
+            normalized.put("notificationId", notificationId);
+            normalized.put("title", title);
+            normalized.put("body", item.optString("body", ""));
+            normalized.put("dueAt", dueAt);
+        } catch (JSONException e) {
+            return false;
+        }
+
+        safe.put(normalized);
+        wanted.put(taskId, normalized);
+        notificationOwners.put(notificationId, taskId);
+    }
+
+    SharedPreferences prefs =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+
+    JSONArray previous;
+
+    try {
+        previous = new JSONArray(prefs.getString(KEY, "[]"));
+    } catch (JSONException e) {
+        previous = new JSONArray();
+    }
+
+    // Save the desired state before changing alarms or notifications.
+    if (!prefs.edit().putString(KEY, safe.toString()).commit()) {
+        return false;
+    }
+
+    boolean success = true;
+
+    // Remove alarms and notifications that are no longer valid.
+    for (int i = 0; i < previous.length(); i++) {
+        JSONObject old = previous.optJSONObject(i);
+        if (old == null) continue;
+
+        String taskId = old.optString("taskId", "");
+        JSONObject current = wanted.get(taskId);
+
+        boolean removed = current == null;
+        boolean changed = !removed
+            && current.optLong("dueAt", -1)
+                != old.optLong("dueAt", -1);
+
+        if (removed || changed) {
+            cancelAlarm(
+                context,
+                taskId,
+                old.optInt("notificationId", -1)
+            );
+
+            NotificationManagerCompat.from(context).cancel(
+                old.optInt("notificationId", -1)
+            );
+        }
+    }
+
+    // Schedule future tasks or display tasks already due.
+    for (int i = 0; i < safe.length(); i++) {
+        JSONObject item = safe.optJSONObject(i);
+        if (item == null) continue;
+
+        long dueAt = item.optLong("dueAt", -1);
+
+        if (dueAt <= System.currentTimeMillis()) {
+            cancelAlarm(
+                context,
+                item.optString("taskId"),
+                item.optInt("notificationId")
+            );
+
+            PersistentTaskNotifications.show(
+                context,
+                item.optInt("notificationId"),
+                item.optString("title"),
+                item.optString("body")
+            );
+        } else if (!schedule(context, item)) {
+            success = false;
+        }
+    }
+
+    return success;
+}
 
         // Remove alarms and notifications that are no longer valid.
         for (int i = 0; i < previous.length(); i++) {
