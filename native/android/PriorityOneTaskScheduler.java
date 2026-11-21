@@ -162,56 +162,7 @@ static boolean sync(Context context, JSONArray incoming) {
         }
     }
 
-        for (int i = 0; i < previous.length(); i++) {
-            JSONObject old = previous.optJSONObject(i);
-            if (old == null) continue;
-
-            String taskId = old.optString("taskId", "");
-            JSONObject current = wanted.get(taskId);
-
-            boolean removed = current == null;
-            boolean changed = !removed
-                && current.optLong("dueAt", -1)
-                    != old.optLong("dueAt", -1);
-
-            if (removed || changed) {
-                cancelAlarm(
-                    context,
-                    taskId,
-                    old.optInt("notificationId", -1)
-                );
-
-                NotificationManagerCompat.from(context).cancel(
-                    old.optInt("notificationId", -1)
-                );
-            }
-        }
-
-        // Schedule future tasks or display tasks already due.
-        for (int i = 0; i < safe.length(); i++) {
-            JSONObject item = safe.optJSONObject(i);
-            if (item == null) continue;
-
-            long dueAt = item.optLong("dueAt", -1);
-
-            if (dueAt <= System.currentTimeMillis()) {
-                cancelAlarm(
-                    context,
-                    item.optString("taskId"),
-                    item.optInt("notificationId")
-                );
-
-                PersistentTaskNotifications.show(
-                    context,
-                    item.optInt("notificationId"),
-                    item.optString("title"),
-                    item.optString("body")
-                );
-            } else if (!schedule(context, item)) {
-                success = false;
-            }
-        }
-
+        
         return success;
     }
 
