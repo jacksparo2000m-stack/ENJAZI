@@ -533,3 +533,63 @@ test('native notification installer copies and registers the priority-one receiv
   assert.match(installer, /if "PersistentTaskRestoreReceiver" not in final_manifest:/);
   assert.match(installer, /if "PriorityOneTaskReceiver" not in final_manifest:/);
 });
+
+
+test('priority one tasks are filtered and synchronized separately', () => {
+  assert.match(
+    native,
+    /Number\(task\.p\) === 1/
+  );
+  assert.match(native, /!task\.x/);
+  assert.match(native, /task\.id != null/);
+  assert.match(native, /task\.d/);
+  assert.match(native, /task\.tm \|\| '23:59'/);
+  assert.match(native, /notificationId\('p1' \+ task\.id\)/);
+  assert.match(native, /await PersistentTasks\.syncPriorityOne\(\{/);
+  assert.match(native, /tasks: priorityOneTasks/);
+});
+
+test('priority one plugin rejects missing task arrays and delegates scheduling', () => {
+  const plugin = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTasksPlugin.java'),
+    'utf8'
+  );
+
+  assert.match(plugin, /syncPriorityOne\(PluginCall call\)/);
+  assert.match(plugin, /if \(tasks == null\)/);
+  assert.match(plugin, /PriorityOneTaskScheduler\.sync\(getContext\(\), tasks\)/);
+});
+
+test('priority one receiver delegates due alarms to the scheduler', () => {
+  const receiver = fs.readFileSync(
+    path.join(root, 'native/android/PriorityOneTaskReceiver.java'),
+    'utf8'
+  );
+
+  assert.match(receiver, /ACTION_TASK_DUE/);
+  assert.match(receiver, /PriorityOneTaskScheduler\.onAlarm\(context, intent\)/);
+});
+
+test('priority one schedules are restored after reboot and app replacement', () => {
+  const receiver = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTaskRestoreReceiver.java'),
+    'utf8'
+  );
+
+  assert.match(receiver, /Intent\.ACTION_BOOT_COMPLETED/);
+  assert.match(receiver, /Intent\.ACTION_MY_PACKAGE_REPLACED/);
+  assert.match(receiver, /PriorityOneTaskScheduler\.restore\(context\)/);
+});
+
+test('priority one scheduler ignores stale alarms and supports inexact fallback', () => {
+  const scheduler = fs.readFileSync(
+    path.join(root, 'native/android/PriorityOneTaskScheduler.java'),
+    'utf8'
+  );
+
+  assert.match(scheduler, /current\.optLong\("dueAt", -1\) != dueAt/);
+  assert.match(scheduler, /current\.optInt\("notificationId"\) != notificationId/);
+  assert.match(scheduler, /manager\.setExactAndAllowWhileIdle/);
+  assert.match(scheduler, /manager\.setAndAllowWhileIdle/);
+  assert.match(scheduler, /PersistentTaskNotifications\.show/);
+});
