@@ -131,9 +131,11 @@ static boolean sync(Context context, JSONArray incoming) {
             if (item == null) continue;
 
             cancelAlarm(
-                context,
-                item.optString("taskId"),
-                item.optInt("notificationId")
+    context,
+    item.optString("taskId"),
+    item.optInt("notificationId"),
+    item.optLong("dueAt", -1)
+);
             );
         }
 
@@ -158,9 +160,11 @@ static boolean sync(Context context, JSONArray incoming) {
             if (item == null) continue;
 
             cancelAlarm(
-                context,
-                item.optString("taskId"),
-                item.optInt("notificationId")
+    context,
+    taskId,
+    old.optInt("notificationId", -1),
+    old.optLong("dueAt", -1)
+
             );
         }
 
@@ -413,35 +417,37 @@ for (int i = 0; i < previous.length(); i++) {
         }
     }
 
-    private static void cancelAlarm(
-        Context context,
-        String taskId,
-        int notificationId
-    ) {
-        if (taskId == null || taskId.isEmpty()
-            || notificationId <= 0) {
-            return;
-        }
+    
+private static void cancelAlarm(
+    Context context,
+    String taskId,
+    int notificationId,
+    long dueAt
+) {
+    if (taskId == null || taskId.isEmpty()
+        || notificationId <= 0 || dueAt <= 0) {
+        return;
+    }
 
-        AlarmManager manager =
-            (AlarmManager) context.getSystemService(
-                Context.ALARM_SERVICE
-            );
-
-        if (manager == null) return;
-
-        PendingIntent pending = alarmIntent(
-            context,
-            taskId,
-            notificationId,
-            "",
-            "",
-            1
+    AlarmManager manager =
+        (AlarmManager) context.getSystemService(
+            Context.ALARM_SERVICE
         );
 
-        manager.cancel(pending);
-        pending.cancel();
-    }
+    if (manager == null) return;
+
+    PendingIntent pending = alarmIntent(
+        context,
+        taskId,
+        notificationId,
+        "",
+        "",
+        dueAt
+    );
+
+    manager.cancel(pending);
+    pending.cancel();
+}
 
     private static PendingIntent alarmIntent(
         Context context,
@@ -461,7 +467,7 @@ for (int i = 0; i < previous.length(); i++) {
         );
 
         intent.setData(
-            Uri.parse("enjazi://priority-one/" + Uri.encode(taskId))
+            Uri.parse(     "enjazi://priority-one/"         + Uri.encode(taskId)         + "/"         + dueAt )
         );
 
         intent.putExtra("taskId", taskId);
