@@ -29,6 +29,7 @@ final class PriorityOneTaskScheduler {
     private PriorityOneTaskScheduler() {}
 
     
+
 static boolean sync(Context context, JSONArray incoming) {
     if (incoming == null) return false;
 
@@ -36,7 +37,7 @@ static boolean sync(Context context, JSONArray incoming) {
     Map<String, JSONObject> wanted = new HashMap<>();
     Map<Integer, String> notificationOwners = new HashMap<>();
 
-    // Validate the entire incoming list before touching saved schedules.
+    // Validate all incoming tasks before changing anything.
     for (int i = 0; i < incoming.length(); i++) {
         JSONObject item = incoming.optJSONObject(i);
         if (item == null) return false;
@@ -70,7 +71,6 @@ static boolean sync(Context context, JSONArray incoming) {
 
         int notificationId = (int) notificationIdValue;
 
-        // Reject duplicate task IDs and notification IDs.
         if (wanted.containsKey(taskId)
             || notificationOwners.containsKey(notificationId)) {
             return false;
@@ -101,17 +101,83 @@ static boolean sync(Context context, JSONArray incoming) {
     try {
         previous = new JSONArray(prefs.getString(KEY, "[]"));
     } catch (JSONException e) {
-        previous = new JSONArray();
-    }
-
-    // Save the desired state before changing alarms or notifications.
-    if (!prefs.edit().putString(KEY, safe.toString()).commit()) {
+        // Never replace unreadable saved state with an empty list.
         return false;
     }
 
-    boolean success = true;
+    // Prepare future alarms before committing the new desired state.
+    boolean preparationFailed = false;
 
-    // Remove alarms and notifications that are no longer valid.
+    for (int i = 0; i < safe.length(); i++) {
+        JSONObject item = safe.optJSONObject(i);
+        if (item == null) {
+            preparationFailed = true;
+            break;
+        }
+
+        long dueAt = item.optLong("dueAt", -1);
+
+        if (dueAt > System.currentTimeMillis()
+            && !schedule(context, item)) {
+            preparationFailed = true;
+            break;
+        }
+    }
+
+    if (preparationFailed) {
+        // Cancel attempted alarms, then restore all previous future alarms.
+        for (int i = 0; i < safe.length(); i++) {
+            JSONObject item = safe.optJSONObject(i);
+            if (item == null) continue;
+
+            cancelAlarm(
+                context,
+                item.optString("taskId"),
+                item.optInt("notificationId")
+            );
+        }
+
+        for (int i = 0; i < previous.length(); i++) {
+            JSONObject old = previous.optJSONObject(i);
+            if (old == null) continue;
+
+            if (old.optLong("dueAt", -1)
+                > System.currentTimeMillis()) {
+                schedule(context, old);
+            }
+        }
+
+        return false;
+    }
+
+    // Commit only after all future alarms have been prepared.
+    if (!prefs.edit().putString(KEY, safe.toString()).commit()) {
+        // Restore the old alarm state if persistence fails.
+        for (int i = 0; i < safe.length(); i++) {
+            JSONObject item = safe.optJSONObject(i);
+            if (item == null) continue;
+
+            cancelAlarm(
+                context,
+                item.optString("taskId"),
+                item.optInt("notificationId")
+            );
+        }
+
+        for (int i = 0; i < previous.length(); i++) {
+            JSONObject old = previous.optJSONObject(i);
+            if (old == null) continue;
+
+            if (old.optLong("dueAt", -1)
+                > System.currentTimeMillis()) {
+                schedule(context, old);
+            }
+        }
+
+        return false;
+    }
+
+    // Remove obsolete alarms and notifications after successful commit.
     for (int i = 0; i < previous.length(); i++) {
         JSONObject old = previous.optJSONObject(i);
         if (old == null) continue;
@@ -120,9 +186,13 @@ static boolean sync(Context context, JSONArray incoming) {
         JSONObject current = wanted.get(taskId);
 
         boolean removed = current == null;
-        boolean changed = !removed
-            && current.optLong("dueAt", -1)
-                != old.optLong("dueAt", -1);
+
+        boolean changed = !removed && (
+            current.optLong("dueAt", -1)
+                != old.optLong("dueAt", -1)
+            || current.optInt("notificationId", -1)
+                != old.optInt("notificationId", -1)
+        );
 
         if (removed || changed) {
             cancelAlarm(
@@ -137,19 +207,13 @@ static boolean sync(Context context, JSONArray incoming) {
         }
     }
 
-    // Schedule future tasks or display tasks already due.
+    // Show notifications for tasks that are already due.
     for (int i = 0; i < safe.length(); i++) {
         JSONObject item = safe.optJSONObject(i);
         if (item == null) continue;
 
-        long dueAt = item.optLong("dueAt", -1);
-
-        if (dueAt <= System.currentTimeMillis()) {
-            cancelAlarm(
-                context,
-                item.optString("taskId"),
-                item.optInt("notificationId")
-            );
+        if (item.optLong("dueAt", -1)
+            <= System.currentTimeMillis()) {
 
             PersistentTaskNotifications.show(
                 context,
@@ -157,15 +221,11 @@ static boolean sync(Context context, JSONArray incoming) {
                 item.optString("title"),
                 item.optString("body")
             );
-        } else if (!schedule(context, item)) {
-            success = false;
         }
     }
 
-        
-        return success;
-    }
-
+    return true;
+}
     static void restore(Context context) {
         SharedPreferences prefs =
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
