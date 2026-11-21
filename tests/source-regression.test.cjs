@@ -625,3 +625,53 @@ test('priority one scheduler identifies alarms by task and due time and preserve
     2
   );
 });
+
+
+test('priority one rescheduling cancels the old notification before showing newly due tasks', () => {
+  const scheduler = fs.readFileSync(
+    path.join(root, 'native/android/PriorityOneTaskScheduler.java'),
+    'utf8'
+  );
+
+  const cleanupStart = scheduler.indexOf(
+    '// Remove obsolete alarms and notifications after successful commit.'
+  );
+
+  const showStart = scheduler.indexOf(
+    '// Show notifications for tasks that are already due.'
+  );
+
+  assert.ok(cleanupStart >= 0);
+  assert.ok(showStart > cleanupStart);
+
+  const cleanup = scheduler.slice(cleanupStart, showStart);
+
+  // A changed due time must cancel the old visible notification.
+  assert.match(
+    cleanup,
+    /if\s*\(removed\s*\|\|\s*dueChanged\s*\|\|\s*notificationChanged\)/
+  );
+
+  // The old alarm must be cancelled using its original due time.
+  assert.match(
+    cleanup,
+    /cancelAlarm\(\s*context,\s*taskId,\s*old\.optInt\("notificationId",\s*-1\),\s*old\.optLong\("dueAt",\s*-1\)\s*\)/
+  );
+
+  // The notification cancellation must happen before the new due notices are shown.
+  assert.match(
+    cleanup,
+    /NotificationManagerCompat\.from\(context\)\.cancel\(\s*old\.optInt\("notificationId",\s*-1\)\s*\)/
+  );
+
+  assert.ok(
+    showStart > cleanupStart,
+    'Newly due notifications must be processed after obsolete notifications are cancelled'
+  );
+
+  // Newly due tasks must still be displayed.
+  assert.match(
+    scheduler.slice(showStart),
+    /PersistentTaskNotifications\.show/
+  );
+});
