@@ -10,11 +10,13 @@ SOURCE_DIR = ROOT / "native/android"
 TARGET_DIR = ROOT / PACKAGE_DIR
 TARGET_DIR.mkdir(parents=True, exist_ok=True)
 
+
 for filename in (
     "PersistentTaskNotifications.java",
     "PersistentTasksPlugin.java",
     "PersistentTaskRestoreReceiver.java",
     "PriorityOneTaskReceiver.java",
+    "PriorityOneTaskScheduler.java",
 ):
     source = SOURCE_DIR / filename
     if not source.is_file():
