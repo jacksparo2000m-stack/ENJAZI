@@ -541,7 +541,7 @@ test('priority one tasks are filtered and synchronized separately', () => {
     /Number\(task\.p\) === 1/
   );
   assert.match(native, /!task\.x/);
-  assert.match(native, /task\.id != null/);
+  assert.match(   native,   /const taskId = task\.id == null \? '' : String\(task\.id\)\.trim\(\)/ ); assert.match(native, /!taskId/);
   assert.match(native, /task\.d/);
   assert.match(native, /task\.tm \|\| '23:59'/);
   assert.match(native, /notificationId\('p1' \+ task\.id\)/);
