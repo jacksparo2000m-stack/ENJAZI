@@ -127,18 +127,36 @@ static boolean sync(Context context, JSONArray incoming) {
     if (preparationFailed) {
         // Cancel attempted alarms, then restore all previous future alarms.
         for (int i = 0; i < safe.length(); i++) {
-            JSONObject item = safe.optJSONObject(i);
-            if (item == null) continue;
+    JSONObject item = safe.optJSONObject(i);
+    if (item == null) continue;
 
-            cancelAlarm(
-    context,
-    item.optString("taskId"),
-    item.optInt("notificationId"),
-    item.optLong("dueAt", -1)
-);
-            );
+    String taskId = item.optString("taskId");
+    int notificationId = item.optInt("notificationId");
+    long dueAt = item.optLong("dueAt", -1);
+
+    boolean existedBefore = false;
+
+    for (int j = 0; j < previous.length(); j++) {
+        JSONObject old = previous.optJSONObject(j);
+        if (old == null) continue;
+
+        if (taskId.equals(old.optString("taskId"))
+            && notificationId == old.optInt("notificationId")
+            && dueAt == old.optLong("dueAt", -1)) {
+            existedBefore = true;
+            break;
         }
+    }
 
+    if (!existedBefore) {
+        cancelAlarm(
+            context,
+            taskId,
+            notificationId,
+            dueAt
+        );
+    }
+}
         for (int i = 0; i < previous.length(); i++) {
             JSONObject old = previous.optJSONObject(i);
             if (old == null) continue;
