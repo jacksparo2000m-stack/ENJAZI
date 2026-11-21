@@ -1,18 +1,21 @@
+
 package com.jacksparo.enjazi;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-public class PersistentTaskRestoreReceiver extends BroadcastReceiver {
+public class PriorityOneTaskReceiver extends BroadcastReceiver {
+
+    public static final String ACTION_TASK_DUE =
+        "com.jacksparo.enjazi.ACTION_TASK_DUE";
+
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent == null) return;
-        String action = intent.getAction();
-        if (Intent.ACTION_BOOT_COMPLETED.equals(action)
-            || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)
-            || "android.intent.action.QUICKBOOT_POWERON".equals(action)) {
-            PersistentTaskNotifications.restore(context);
-        }
+
+        if (!ACTION_TASK_DUE.equals(intent.getAction())) return;
+
+        PriorityOneTaskScheduler.onAlarm(context, intent);
     }
 }
