@@ -266,11 +266,11 @@ for (int i = 0; i < previous.length(); i++) {
     }
 
     // Remove the old visible notification when its state changed.
-    if (removed || dueChanged || notificationChanged) {
-        NotificationManagerCompat.from(context).cancel(
-            old.optInt("notificationId", -1)
-        );
-    }
+    if (removed || notificationChanged) {
+    NotificationManagerCompat.from(context).cancel(
+        old.optInt("notificationId", -1)
+    );
+}
 }
 
     // Show notifications for tasks that are already due.
