@@ -18,17 +18,23 @@ function notificationId(value) {
 // Read the same saved task state used by index.html. This deliberately does
 // not rely on the optional per-task pin checkbox: every active medium/high
 // priority task is kept visible as requested.
+
 async function syncPersistentTasksFromStorage() {
   try {
     const raw = window.localStorage.getItem(TASKS_STORAGE_KEY);
-    // Missing storage is ambiguous (new install, changed WebView origin, or
-    // unavailable old data). Never interpret it as an empty task list.
+
+    // Missing storage is ambiguous. Never treat it as an empty task list.
     if (raw === null) return null;
+
     const state = JSON.parse(raw);
+
     if (!state || !Array.isArray(state.tasks) || !Array.isArray(state.groups)) {
       throw new Error('Invalid or incomplete saved task state');
     }
+
     const ar = state.lang !== 'en';
+
+    // Existing priority 2/3 notifications — behavior unchanged.
     const notifications = state.tasks
       .filter(task => task && !task.x && Number(task.p) >= 2)
       .map(task => ({
@@ -41,10 +47,47 @@ async function syncPersistentTasksFromStorage() {
       }))
       .filter(item => item.title.trim());
 
+    // Priority 1 tasks: schedule only tasks that have a due date.
+    const priorityOneTasks = state.tasks
+      .filter(task =>
+        task &&
+        !task.x &&
+        Number(task.p) === 1 &&
+        task.id != null &&
+        task.d
+      )
+      .map(task => {
+        const dueAt = new Date(
+          String(task.d) + 'T' + String(task.tm || '23:59')
+        ).getTime();
+
+        return {
+          taskId: String(task.id),
+          notificationId: notificationId('p1' + task.id),
+          title: String(task.t || ''),
+          body: task.d
+            + (task.tm ? ' · ' + String(task.tm) : ''),
+          dueAt
+        };
+      })
+      .filter(item =>
+        item.title.trim() &&
+        Number.isFinite(item.dueAt) &&
+        item.dueAt > 0
+      );
+
+    // Reconcile existing priority 2/3 notifications.
     await PersistentTasks.sync({ notifications });
+
+    // Reconcile priority 1 scheduled tasks.
+    await PersistentTasks.syncPriorityOne({
+      tasks: priorityOneTasks
+    });
+
     return new Set(notifications.map(item => item.id));
+
   } catch (error) {
-    // If storage is corrupt/unavailable, do not clear native notifications.
+    // If storage or native synchronization fails, do not clear saved notices.
     console.error('ENJAZI persistent task sync skipped:', error);
     return null;
   }
