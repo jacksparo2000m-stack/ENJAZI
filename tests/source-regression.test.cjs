@@ -544,7 +544,7 @@ test('priority one tasks are filtered and synchronized separately', () => {
   assert.match(   native,   /const taskId = task\.id == null \? '' : String\(task\.id\)\.trim\(\)/ ); assert.match(native, /!taskId/);
   assert.match(native, /task\.d/);
   assert.match(native, /task\.tm \|\| '23:59'/);
-  assert.match(native, /notificationId\('p1' \+ task\.id\)/);
+  assert.match(native, /notificationId\('p1' \+ taskId\)/);
   assert.match(native, /await PersistentTasks\.syncPriorityOne\(\{/);
   assert.match(native, /tasks: priorityOneTasks/);
 });
