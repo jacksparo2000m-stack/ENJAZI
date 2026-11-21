@@ -253,13 +253,9 @@ for (int i = 0; i < previous.length(); i++) {
         && current.optInt("notificationId", -1)
             != old.optInt("notificationId", -1);
 
-    boolean newTaskAlreadyDue = !removed
-        && current.optLong("dueAt", -1)
-            <= System.currentTimeMillis();
-
+    
     // Cancel the old alarm only when it cannot be the new alarm.
-    if (removed || notificationChanged
-        || (dueChanged && newTaskAlreadyDue)) {
+    if (removed || dueChanged || notificationChanged) {
 
         cancelAlarm(
     context,
