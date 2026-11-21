@@ -178,34 +178,46 @@ static boolean sync(Context context, JSONArray incoming) {
     }
 
     // Remove obsolete alarms and notifications after successful commit.
-    for (int i = 0; i < previous.length(); i++) {
-        JSONObject old = previous.optJSONObject(i);
-        if (old == null) continue;
+    
+for (int i = 0; i < previous.length(); i++) {
+    JSONObject old = previous.optJSONObject(i);
+    if (old == null) continue;
 
-        String taskId = old.optString("taskId", "");
-        JSONObject current = wanted.get(taskId);
+    String taskId = old.optString("taskId", "");
+    JSONObject current = wanted.get(taskId);
 
-        boolean removed = current == null;
+    boolean removed = current == null;
 
-        boolean changed = !removed && (
-            current.optLong("dueAt", -1)
-                != old.optLong("dueAt", -1)
-            || current.optInt("notificationId", -1)
-                != old.optInt("notificationId", -1)
+    boolean dueChanged = !removed
+        && current.optLong("dueAt", -1)
+            != old.optLong("dueAt", -1);
+
+    boolean notificationChanged = !removed
+        && current.optInt("notificationId", -1)
+            != old.optInt("notificationId", -1);
+
+    boolean newTaskAlreadyDue = !removed
+        && current.optLong("dueAt", -1)
+            <= System.currentTimeMillis();
+
+    // Cancel the old alarm only when it cannot be the new alarm.
+    if (removed || notificationChanged
+        || (dueChanged && newTaskAlreadyDue)) {
+
+        cancelAlarm(
+            context,
+            taskId,
+            old.optInt("notificationId", -1)
         );
-
-        if (removed || changed) {
-            cancelAlarm(
-                context,
-                taskId,
-                old.optInt("notificationId", -1)
-            );
-
-            NotificationManagerCompat.from(context).cancel(
-                old.optInt("notificationId", -1)
-            );
-        }
     }
+
+    // Remove the old visible notification when its state changed.
+    if (removed || dueChanged || notificationChanged) {
+        NotificationManagerCompat.from(context).cancel(
+            old.optInt("notificationId", -1)
+        );
+    }
+}
 
     // Show notifications for tasks that are already due.
     for (int i = 0; i < safe.length(); i++) {
