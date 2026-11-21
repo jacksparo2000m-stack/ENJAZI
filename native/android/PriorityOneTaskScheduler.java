@@ -162,10 +162,6 @@ static boolean sync(Context context, JSONArray incoming) {
         }
     }
 
-    return success;
-}
-
-        // Remove alarms and notifications that are no longer valid.
         for (int i = 0; i < previous.length(); i++) {
             JSONObject old = previous.optJSONObject(i);
             if (old == null) continue;
