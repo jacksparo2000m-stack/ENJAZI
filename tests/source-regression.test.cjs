@@ -593,3 +593,35 @@ test('priority one scheduler ignores stale alarms and supports inexact fallback'
   assert.match(scheduler, /manager\.setAndAllowWhileIdle/);
   assert.match(scheduler, /PersistentTaskNotifications\.show/);
 });
+
+test('priority one scheduler identifies alarms by task and due time and preserves previous alarms during rollback', () => {
+  const scheduler = fs.readFileSync(
+    path.join(root, 'native/android/PriorityOneTaskScheduler.java'),
+    'utf8'
+  );
+
+  assert.match(
+    scheduler,
+    /"enjazi:\/\/priority-one\/"\s*\+\s*Uri\.encode\(taskId\)\s*\+\s*"\/"\s*\+\s*dueAt/
+  );
+
+  assert.match(
+    scheduler,
+    /private static void cancelAlarm\(\s*Context context,\s*String taskId,\s*int notificationId,\s*long dueAt/
+  );
+
+  assert.match(
+    scheduler,
+    /alarmIntent\(\s*context,\s*taskId,\s*notificationId,\s*"",\s*"",\s*dueAt\s*\)/
+  );
+
+  assert.match(
+    scheduler,
+    /!existedBefore\s*&&\s*!schedule\(context,\s*item\)/
+  );
+
+  assert.equal(
+    (scheduler.match(/if \(!existedBefore\)/g) || []).length,
+    2
+  );
+});
