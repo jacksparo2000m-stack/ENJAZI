@@ -517,7 +517,7 @@ test('native notification installer copies and registers the priority-one receiv
 
   // Copy the new receiver into the generated Android project.
   assert.match(installer, /"PriorityOneTaskReceiver\.java"/);
-  assert.match(installer, /"PriorityOneTaskScheduler\\.java"/);
+  assert.match(installer, /"PriorityOneTaskScheduler\.java"/);
 
   // Register both receivers independently.
   assert.match(installer, /if "PersistentTaskRestoreReceiver" not in xml:/);
