@@ -245,10 +245,11 @@ for (int i = 0; i < previous.length(); i++) {
         || (dueChanged && newTaskAlreadyDue)) {
 
         cancelAlarm(
-            context,
-            taskId,
-            old.optInt("notificationId", -1)
-        );
+    context,
+    taskId,
+    old.optInt("notificationId", -1),
+    old.optLong("dueAt", -1)
+);
     }
 
     // Remove the old visible notification when its state changed.
