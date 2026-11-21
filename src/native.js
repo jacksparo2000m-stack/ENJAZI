@@ -48,27 +48,40 @@ async function syncPersistentTasksFromStorage() {
       .filter(item => item.title.trim());
 
     // Priority 1 tasks: schedule only tasks that have a due date.
-    const priorityOneTasks = state.tasks
-      .filter(task =>
-        task &&
-        !task.x &&
-        Number(task.p) === 1 &&
-        task.id != null &&
-        task.d
-      )
-      .map(task => {
-        const dueAt = new Date(
-          String(task.d) + 'T' + String(task.tm || '23:59')
-        ).getTime();
+    
+const priorityOneTasks = state.tasks
+  .filter(task =>
+    task &&
+    !task.x &&
+    Number(task.p) === 1 &&
+    task.d
+  )
+  .map(task => {
+    const taskId = task.id == null ? '' : String(task.id).trim();
+    const title = String(task.t || '').trim();
 
-        return {
-          taskId: String(task.id),
-          notificationId: notificationId('p1' + task.id),
-          title: String(task.t || ''),
-          body: task.d
-            + (task.tm ? ' · ' + String(task.tm) : ''),
-          dueAt
-        };
+    const dueAt = new Date(
+      String(task.d) + 'T' + String(task.tm || '23:59')
+    ).getTime();
+
+    if (
+      !taskId ||
+      !title ||
+      !Number.isFinite(dueAt) ||
+      dueAt <= 0
+    ) {
+      throw new Error('Invalid priority one task data; preserving existing schedules');
+    }
+
+    return {
+      taskId,
+      notificationId: notificationId('p1' + taskId),
+      title,
+      body: task.d
+        + (task.tm ? ' · ' + String(task.tm) : ''),
+      dueAt
+    };
+  });
       })
       .filter(item =>
         item.title.trim() &&
