@@ -48,7 +48,6 @@ async function syncPersistentTasksFromStorage() {
       .filter(item => item.title.trim());
 
     // Priority 1 tasks: schedule only tasks that have a due date.
-    
 const priorityOneTasks = state.tasks
   .filter(task =>
     task &&
@@ -82,13 +81,6 @@ const priorityOneTasks = state.tasks
       dueAt
     };
   });
-      })
-      .filter(item =>
-        item.title.trim() &&
-        Number.isFinite(item.dueAt) &&
-        item.dueAt > 0
-      );
-
     // Reconcile existing priority 2/3 notifications.
     await PersistentTasks.sync({ notifications });
 
