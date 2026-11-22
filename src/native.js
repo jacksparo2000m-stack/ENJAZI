@@ -75,7 +75,7 @@ const priorityOneTasks = state.tasks
     return {
       taskId,
       notificationId: notificationId('p1' + taskId),
-            title,
+      title,
       body: [
         String(task.n || '').trim(),
         task.d
