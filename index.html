@@ -1010,6 +1010,31 @@ for(const [i,x] of (o.tasks||[]).entries()){
 }
 return '';
 };
+ if(Object.prototype.hasOwnProperty.call(o,'deadlines')&&!AR(o.deadlines))return W('قائمة المواعيد النهائية غير صالحة','invalid deadlines array');
+if((o.deadlines||[]).length>MAX_NOTES)return W('عدد المواعيد النهائية أكبر من الحد الآمن','deadline count exceeds safe limit');
+
+for(const [i,d] of (o.deadlines||[]).entries()){
+ const label=T('الموعد النهائي رقم '+(i+1),'deadline #'+(i+1)),err=(a,b)=>W(label+' — '+a,label+' — '+b);
+
+ if(!R(d)||!addId(d.id)||!text(d.title,500)||!d.title.trim())return err('بيانات الموعد أو معرّف مكرر','invalid deadline data or duplicate ID');
+
+ if(!date(d.dueDate)||!time(d.dueTime))return err('تاريخ أو وقت الموعد غير صالح','invalid deadline date or time');
+
+ if(has(d.description)&&!text(d.description,10000))return err('الوصف غير صالح','invalid description');
+
+ if(!AR(d.taskIds)||d.taskIds.length>MAX_TASKS||!d.taskIds.every(id=>text(id,256)&&id.trim()))return err('روابط المهام غير صالحة','invalid linked task IDs');
+
+ if(new Set(d.taskIds).size!==d.taskIds.length)return err('يوجد ربط مكرر لنفس المهمة','duplicate linked task');
+
+ if(!stamp(d.createdAt)||!stamp(d.updatedAt))return err('تاريخ إنشاء أو تعديل الموعد غير صالح','invalid creation or update timestamp');
+}
+
+const taskIds=new Set((o.tasks||[]).map(task=>task.id));
+for(const [i,d] of (o.deadlines||[]).entries()){
+ for(const taskId of d.taskIds){
+  if(!taskIds.has(taskId))return W('الموعد النهائي رقم '+(i+1)+' — المهمة المرتبطة غير موجودة','deadline #'+(i+1)+' — linked task does not exist');
+ }
+}
 $('#imp').addEventListener('change',e=>{
  const el=e.target,fl=el.files&&el.files[0];if(!fl)return;
  if(fl.size>10*1024*1024){
