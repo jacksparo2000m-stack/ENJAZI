@@ -541,6 +541,10 @@ test('native notification installer copies and registers the priority-one receiv
     installer,
     /if "protected void onNewIntent\(Intent intent\)" not in source:/
   );
+    assert.match(
+    installer,
+    /if "protected void onNewIntent\(Intent intent\)" not in main\.read_text\(encoding="utf-8"\):/
+  );
 });
 
 
