@@ -751,7 +751,7 @@ else S.notes[index]=note;
 const ok=await save();  if(ok){   ND=null;   $('#sh').hidden=1;   render();  } }, tb:i=>{f.tab=i;render()},fc:i=>{f.cat=i;render()},co:()=>{f.open=!f.open;$('#lst').innerHTML=lst()},add:()=>openSheet(),ed:i=>openSheet(i),
 tg:i=>{const x=S.tasks.find(a=>a.id===i);x.x=x.x?0:Date.now();lkd(x,x.x?1:-1);if(x.x&&x.rp&&x.d&&!S.tasks.some(a=>a.rf===x.id))S.tasks.push({...x,id:uid(),rf:x.id,x:0,fr:[],d:nd(x.d,x.rp),sub:(x.sub||[]).map(s=>({...s,x:0}))});up();pins()},
 del:i=>{if(confirm(T('حذف المهمة؟','Delete task?'))){const x=S.tasks.find(a=>a.id===i);if(x&&x.x)lkd(x,-1);unlinkTasksFromDeadlines([i]);S.tasks=S.tasks.filter(x=>x.id!==i);up();pins()}},
-clr:()=>{if(confirm(T('مسح كل المهام المنجزة؟','Clear all completed tasks?'))){S.tasks.filter(x=>x.x).forEach(x=>lkd(x,-1));S.tasks=S.tasks.filter(x=>!x.x);up()}},
+clr:()=>{if(confirm(T('مسح كل المهام المنجزة؟','Clear all completed tasks?'))){const removedIds=S.tasks.filter(x=>x.x).map(x=>x.id);S.tasks.filter(x=>x.x).forEach(x=>lkd(x,-1));unlinkTasksFromDeadlines(removedIds);S.tasks=S.tasks.filter(x=>!x.x);up()}},
 qd:i=>{sync();const t=new Date();t.setDate(t.getDate()+ +i);D.d=iso(t);draw()},pr:i=>{sync();D.p=+i;draw()},cc:i=>{sync();D.c=i;draw()},
 as:()=>{sync();const e=$('#fs').value.trim();if(e){D.sub.push({t:e,x:0});draw()}},rs:i=>{sync();D.sub.splice(+i,1);draw()},ts:i=>{sync();D.sub[+i].x=D.sub[+i].x?0:1;draw()},
 cx:()=>{D=null;$('#sh').hidden=1},sv:()=>{sync();if(!D.t.trim())return toast(T('اكتب عنوان المهمة','Enter a title'));D.t=D.t.trim();D.fr=[];
