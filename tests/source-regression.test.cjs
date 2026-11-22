@@ -549,6 +549,24 @@ test('priority one tasks are filtered and synchronized separately', () => {
   assert.match(native, /tasks: priorityOneTasks/);
 });
 
+test('priority one notification body includes task description and due date/time', () => {
+  assert.match(
+    native,
+    /body:\s*\[\s*String\(task\.n\s*\|\|\s*''\)\.trim\(\),/
+  );
+
+  assert.match(
+    native,
+    /task\.d\s*\+\s*\(task\.tm\s*\?\s*' · '\s*\+\s*String\(task\.tm\)\s*:\s*''\)/
+  );
+
+  assert.match(
+    native,
+    /\.filter\(Boolean\)\.join\('\\n'\)/
+  );
+});
+
+
 test('priority one plugin rejects missing task arrays and delegates scheduling', () => {
   const plugin = fs.readFileSync(
     path.join(root, 'native/android/PersistentTasksPlugin.java'),
