@@ -13,17 +13,16 @@
 
 
 Latest branch snapshot checked while preparing this reference:
-Branch: `fix/primary-storage-before-backup`
+Branch: "fix/primary-storage-before-backup"
 
 index.html blob SHA:
-`c1f3d10cf576b608c907ecc481719b4a7c815a77`
+"45f02e48baa8092c2c595203839f5525071c8304"
 
 tests/backup-runtime.test.cjs blob SHA:
-`9793aaf775b74b0c32de36c944945264cfb5ab6e`
+"9793aaf775b74b0c32de36c944945264cfb5ab6e"
 
 tests/source-regression.test.cjs blob SHA:
-`57d2fd367e6ece8fdf0f4ea98f601f288f78d1e5`
-
+"16da73a4edecec945e290692b30d22b27aaddcb3"
 
 
 Latest verified release: v1.271
