@@ -532,6 +532,15 @@ test('native notification installer copies and registers the priority-one receiv
   // Verify both receivers after writing the manifest.
   assert.match(installer, /if "PersistentTaskRestoreReceiver" not in final_manifest:/);
   assert.match(installer, /if "PriorityOneTaskReceiver" not in final_manifest:/);
+    // Preserve the latest notification intent when MainActivity is reused.
+  assert.match(installer, /import android\.content\.Intent;/);
+  assert.match(installer, /protected void onNewIntent\(Intent intent\)/);
+  assert.match(installer, /super\.onNewIntent\(intent\);/);
+  assert.match(installer, /setIntent\(intent\);/);
+  assert.match(
+    installer,
+    /if "protected void onNewIntent\(Intent intent\)" not in source:/
+  );
 });
 
 
