@@ -58,6 +58,30 @@ if "PersistentTasksPlugin.class" not in source:
         source, count = re.subn(pattern, replacement, source, count=1)
         if count != 1:
             raise SystemExit("Could not register PersistentTasksPlugin in MainActivity")
+
+
+# Ensure notification taps update the existing MainActivity intent.
+if "import android.content.Intent;" not in source:
+    source = source.replace(
+        "package com.jacksparo.enjazi;",
+        "package com.jacksparo.enjazi;\n\nimport android.content.Intent;",
+        1,
+    )
+
+if "protected void onNewIntent(Intent intent)" not in source:
+    pattern = r"(public class MainActivity extends BridgeActivity\s*\{)"
+    replacement = (
+        r"\1\n"
+        r"    @Override\n"
+        r"    protected void onNewIntent(Intent intent) {\n"
+        r"        super.onNewIntent(intent);\n"
+        r"        setIntent(intent);\n"
+        r"    }\n"
+    )
+    source, count = re.subn(pattern, replacement, source, count=1)
+    if count != 1:
+        raise SystemExit("Could not add onNewIntent handling to MainActivity")
+
 main.write_text(source, encoding="utf-8")
 
 manifest = ROOT / "android/app/src/main/AndroidManifest.xml"
