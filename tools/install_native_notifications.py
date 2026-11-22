@@ -128,7 +128,8 @@ manifest.write_text(xml, encoding="utf-8")
 
 if "PersistentTasksPlugin.class" not in main.read_text(encoding="utf-8"):
     raise SystemExit("PersistentTasksPlugin registration verification failed")
-    if "protected void onNewIntent(Intent intent)" not in main.read_text(encoding="utf-8"):
+    
+if "protected void onNewIntent(Intent intent)" not in main.read_text(encoding="utf-8"):
     raise SystemExit("MainActivity onNewIntent verification failed")
 
 final_manifest = manifest.read_text(encoding="utf-8")
