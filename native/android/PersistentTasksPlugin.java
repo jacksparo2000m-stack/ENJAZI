@@ -79,4 +79,25 @@ public class PersistentTasksPlugin extends Plugin {
 
         call.resolve();
     }
+        @PluginMethod
+    public void consumePendingTask(PluginCall call) {
+        android.content.Intent intent =
+            getActivity().getIntent();
+
+        String taskId = intent.getStringExtra("enjaziTaskId");
+
+        if (taskId != null) {
+            intent.removeExtra("enjaziTaskId");
+            getActivity().setIntent(intent);
+        }
+
+        com.getcapacitor.JSObject result =
+            new com.getcapacitor.JSObject();
+
+        if (taskId != null && !taskId.trim().isEmpty()) {
+            result.put("taskId", taskId);
+        }
+
+        call.resolve(result);
+    }
 }
