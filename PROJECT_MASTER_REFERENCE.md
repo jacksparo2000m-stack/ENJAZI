@@ -303,6 +303,46 @@ Expected behavior:
 4. Review both the in-app Back control and Android system Back.
 5. Preserve consistent navigation and avoid accidental loss of unsaved edits.
 
+
+Improvement 7 — ENJAZI Deadlines
+
+Status: CONFIRMED / IMPLEMENTATION NOT STARTED.
+
+Core behavior:
+- Support multiple independent deadlines.
+- Each deadline has its own stable ID, title, due date/time, and optional description.
+- A deadline can link to one or more existing tasks.
+- Store linked task IDs, not duplicated task records.
+- Deadline completion is derived automatically from linked task states.
+- When all linked tasks are completed, mark the deadline Completed and remove its persistent notification.
+- If any linked task is reopened, return the deadline to Active and show its notification again.
+- When all linked tasks become completed again, mark the deadline Completed again.
+
+Persistent notification:
+- Show the deadline notification immediately upon creation.
+- Keep it persistent until all linked tasks are completed or the deadline is deleted.
+- Display a clear countdown showing remaining hours and minutes.
+- Editing the due date/time must update the countdown.
+- Each deadline must have its own stable notification identity.
+- Restore active deadline notifications after device reboot.
+- Do not interfere with Priority 1 task notification behavior.
+
+Battery and performance requirements:
+- Battery efficiency is a core requirement.
+- Prefer Android's native notification countdown/chronometer capabilities where supported.
+- Do not run a JavaScript timer or continuous background service just to refresh the countdown.
+- Avoid unnecessary polling, wakeups, and repeated storage writes.
+- Update notifications only for meaningful deadline/task events.
+- Use low notification importance without repeated sound or vibration by default.
+- Verify actual countdown behavior and battery impact on the target Android device.
+- Do not promise exact second-by-second updates across all Android versions and OEM implementations.
+
+Data integrity:
+- Preserve existing task IDs and task records.
+- Derive deadline status from the current state of linked tasks.
+- Handle task completion, reopening, deletion, and deadline editing consistently.
+- Preserve all existing user data and unrelated notification behavior.
+
 Data safety:
 
 - Navigation changes must not modify, delete, or reset user data.
