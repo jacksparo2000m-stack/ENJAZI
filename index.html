@@ -164,7 +164,7 @@ auditStorage.clear=function(){
 };
 
 const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
-const DEFAULT_STATE=()=>({lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[],notes:[]});
+const DEFAULT_STATE=()=>({lang:'ar',th:'light',fs:'m',tasks:[],groups:[],cats:[],notes:[],deadlines:[]});
 let S=DEFAULT_STATE(),BOOT_RAW=null,BOOT_DATA=null,BOOT_ERROR='',BOOT_READ_FAILED=false,RECOVERY=false,SAVE_FAILED=false,LAST_GOOD_RAW=null;
  let BOOT_TRACE={};
 try{BOOT_RAW=localStorage.getItem(K);if(BOOT_RAW!==null)BOOT_DATA=JSON.parse(BOOT_RAW)}catch(e){BOOT_READ_FAILED=true;BOOT_ERROR=String(e&&e.message||e||'Storage read failed');RECOVERY=true}
