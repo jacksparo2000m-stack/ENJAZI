@@ -721,6 +721,28 @@ const pr=(m,def)=>{const r=prompt(m,def);return r&&r.trim()?r.trim():null},it2=i
 
  if(f.subjectId&&ids.has(f.subjectId))f.subjectId='';
 };
+ const unlinkTasksFromDeadlines=taskIds=>{
+ const removed=new Set(taskIds);
+ if(!removed.size)return false;
+
+ let changed=false;
+ const now=Date.now();
+
+ S.deadlines.forEach(d=>{
+  const links=d.taskIds||[];
+  const remaining=links.filter(id=>!removed.has(id));
+
+  if(remaining.length!==links.length){
+   d.taskIds=remaining;
+   d.updatedAt=now;
+   changed=true;
+  }
+ });
+
+ return changed;
+};
+
+
 const H={nv:i=>{v=i;render()},nn:()=>openNoteSheet(), ne:i=>editNoteSheet(i), nclose:()=>{ND=null;$('#sh').hidden=1}, ndel:async()=>{  if(!ND)return;  const note=S.notes.find(n=>n.id===ND.id);  if(!note)return;   if(!confirm(T(   'هل أنت متأكد من حذف الملاحظة: ','Are you sure you want to delete the note: '  )+note.title+'؟'))return;   const index=S.notes.findIndex(n=>n.id===ND.id);  if(index<0)return;   S.notes.splice(index,1);   const ok=await save(false);  if(ok){   ND=null;   $('#sh').hidden=1;   render();  } }, nsave:async()=>{  const title=$('#nt').value.trim();  const content=$('#nc').value; const subjectId=$('#noteSubject').value;   if(!title)return toast(T('اكتب عنوان الملاحظة','Enter a note title'));  if(title.length>500||content.length>100000)return toast(T('الملاحظة أكبر من الحد المسموح','Note exceeds the allowed limit'));  const index=S.notes.findIndex(n=>n.id===ND.id);  const currentTotal=S.notes.reduce((a,n)=>a+n.content.length,0); const projectedCount=S.notes.length+(index<0?1:0); const projectedTotal=currentTotal-(index<0?0:S.notes[index].content.length)+content.length;  if(projectedCount>50000||projectedTotal>500000)  return toast(T('وصلت للحد الآمن للملاحظات','Safe notes limit reached'));   const note={...ND,title,content,subjectId,updatedAt:Date.now()};
 
 
