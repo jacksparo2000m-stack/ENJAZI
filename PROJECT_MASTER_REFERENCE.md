@@ -228,26 +228,96 @@ Verification:
 - APK identity/signing and packaged web assets verified.
 - Release v1.219 published successfully.
   
-### Phase 3 — Android system Back behavior
-- Support the device/system back action as well as the in-app back control.
-- Handle pages, dialogs, and navigation correctly.
-- Avoid accidental app exit or loss of unsaved edits.
+Phase 3 — Confirmed product improvements
 
-### Phase 4 — Notes / notebook redesign
-- Provide a spacious writing experience similar in convenience to the native notes app on Huawei Y7.
-- Add suitable writing and editing conveniences.
-- Keep the interface practical on the user's Android device.
+Status: IN PROGRESS — requirements confirmed; implementation and verification are tracked individually.
 
-### Phase 5 — Tasks and productivity
-- Improve task management and organization.
-- Develop persistent notifications/reminders: the user's goal is for pending-task notifications to remain visible in the Android notification shade until the task is completed or deleted, subject to Android OS notification behavior and permissions.
-- Improve the daily workflow without compromising reliability.
+The following six improvements are confirmed and must remain tracked until implementation and verification are complete.
 
-### Phase 6 — Final quality and stable release
-- Run full automated checks and targeted regression tests.
-- Verify Android package identity/signing and packaged web assets.
-- Verify install-over-existing-app behavior and data preservation.
-- Publish only after checks pass.
+Improvement 1 — Priority 1 task persistent notifications
+
+Status: IMPLEMENTATION IN PROGRESS.
+
+- Applies to priority 1 tasks only.
+- Before the scheduled due date/time, no persistent notification should appear.
+- At the due date/time, show a persistent notification.
+- Keep it visible until the task is completed, deleted, or its due date/time changes.
+- When due date/time changes, remove the old notification and schedule the new due time.
+- Avoid duplicate notifications when reopening the app.
+- Support scheduling while the app is closed and restoring pending schedules after device reboot.
+- Preserve existing priority 2/3 behavior and recurrence/reminder behavior.
+- Do not promise exact-minute delivery without confirming Android OS permissions and scheduling behavior.
+
+Improvement 2 — Expandable notification details
+
+Status: CONFIRMED / IMPLEMENTATION AND DEVICE VERIFICATION PENDING.
+
+- Allow task notifications to expand in the Android notification shade.
+- Show useful task details without requiring the app to open.
+- Tapping a notification should open the app and, where supported, the relevant task.
+- Preserve existing notification actions and priority 2/3 behavior.
+- Verify actual behavior on the supported Android device and versions.
+
+Improvement 3 — Recently opened memo sorting
+
+Status: CONFIRMED / NOT IMPLEMENTED.
+
+- Sort memos by last-opened time, newest first.
+- Opening a memo updates its last-opened timestamp.
+- Preserve memo IDs, content, and existing associations.
+- Inspect the actual memo model and rendering before implementation.
+
+Improvement 4 — Separate subject-linked tasks section
+
+Status: CONFIRMED / NOT IMPLEMENTED.
+
+- Add a separate section for tasks linked to study subjects.
+- Group tasks by their associated subject.
+- Display both completed and incomplete linked tasks with their completion status.
+- Use existing task records and subject associations as the source of truth.
+- Prefer a derived view; do not duplicate task records.
+- Preserve the existing manually managed study-progress table and achievement history ("ls").
+- Do not alter task-subject associations ("subjectId" / "lk") merely to display this section.
+
+Improvement 5 — Smart notebook ENJAZI Notes
+
+Status: CONFIRMED / DETAILED SPECIFICATION MUST BE REVIEWED BEFORE IMPLEMENTATION.
+
+- Support multiple pages and organized notebooks.
+- Allow notes to be linked to subjects, projects, tasks, and reminders.
+- Support converting selected note content into tasks.
+- Coordinate note state with linked tasks.
+- Provide rich text formatting, lists, colors, favorites, pinning, tags, templates, and search.
+- Support archive, trash, restore, sharing, export, and import.
+- Provide reliable autosave.
+- Retrieve and review the original detailed user requirements before implementation; do not assume this summary covers every expected behavior.
+
+Improvement 6 — In-app and Android system Back navigation
+
+Status: CONFIRMED / NOT IMPLEMENTED.
+
+Expected behavior:
+
+1. From a nested section, Back returns to the previous screen or exits the current section.
+2. From a details screen, Back returns to the screen or list that opened it.
+3. Only from the home screen should Back invoke the app's defined exit behavior.
+4. Review both the in-app Back control and Android system Back.
+5. Preserve consistent navigation and avoid accidental loss of unsaved edits.
+
+Data safety:
+
+- Navigation changes must not modify, delete, or reset user data.
+
+Implementation and verification policy
+
+- Work on one focused change at a time.
+- Inspect the actual repository files before proposing edits.
+- Add regression tests for each implemented behavior.
+- Fetch and verify every edited file after the user's commit.
+- Do not mark an improvement complete until its relevant automated tests and GitHub Actions checks pass.
+- Distinguish automated source verification from actual Android device testing.
+- Preserve user data; never request clearing app data or risky storage experiments.
+- Update this master reference after every completed improvement and verified milestone.
 
 ## 6. Release and test discipline
 
