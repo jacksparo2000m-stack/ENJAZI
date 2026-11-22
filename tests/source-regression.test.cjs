@@ -116,6 +116,29 @@ test('notes are validated with stable IDs and optional subject links', () => {
   assert.match(html, /n\.subjectId&&!subjectIds\.has\(n\.subjectId\)/);
 });
 
+test('deadlines are initialized and migrated safely', () => {
+  assert.match(html, /const DEFAULT_STATE=\(\)=>\(\{[^}]*deadlines:\[\]/);
+  assert.match(html, /if\(!Object\.prototype\.hasOwnProperty\.call\(s,'deadlines'\)\)s\.deadlines=\[\]/);
+  assert.match(html, /else if\(!Array\.isArray\(s\.deadlines\)\)throw new Error\('Invalid deadlines collection'\)/);
+});
+
+test('deadlines are validated with stable IDs, dates, timestamps, and task links', () => {
+  const start = html.indexOf('const vld=o=>{');
+  const end = html.indexOf("$('#imp').addEventListener", start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const validator = html.slice(start, end);
+
+  assert.match(validator, /Object\.prototype\.hasOwnProperty\.call\(o,'deadlines'\)/);
+  assert.match(validator, /!addId\(d\.id\)/);
+  assert.match(validator, /!date\(d\.dueDate\)\|\|!time\(d\.dueTime\)/);
+  assert.match(validator, /!stamp\(d\.createdAt\)\|\|!stamp\(d\.updatedAt\)/);
+  assert.match(validator, /!AR\(d\.taskIds\)/);
+  assert.match(validator, /new Set\(d\.taskIds\)/);
+  assert.match(validator, /taskIds\.has\(taskId\)/);
+});
+
 test('notepad save calculates projected limits correctly for create and edit', () => {
   assert.match(html, /const index=S\.notes\.findIndex\(n=>n\.id===ND\.id\)/);
   assert.match(html, /const currentTotal=S\.notes\.reduce\(\(a,n\)=>a\+n\.content\.length,0\)/);
