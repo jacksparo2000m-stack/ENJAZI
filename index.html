@@ -175,6 +175,7 @@ const askTotal=(message,initial='')=>{const raw=prompt(message,initial);if(raw==
 const mig=(s)=>{let generated=0;
  if(!s||!Array.isArray(s.tasks)||!Array.isArray(s.groups))throw new Error('Invalid state shape');
                 if(!Object.prototype.hasOwnProperty.call(s,'notes'))s.notes=[]; else if(!Array.isArray(s.notes))throw new Error('Invalid notes collection');
+                if(!Object.prototype.hasOwnProperty.call(s,'deadlines'))s.deadlines=[]; else if(!Array.isArray(s.deadlines))throw new Error('Invalid deadlines collection');
   s.tasks.forEach(x=>{if(typeof x.subjectId!=='string')x.subjectId='';if(!Array.isArray(x.rms))x.rms=Number.isSafeInteger(x.rm)&&x.rm>=0?[x.rm]:[];if(!Array.isArray(x.sub))x.sub=[];if(!Array.isArray(x.fr))x.fr=[]});
  s.groups.forEach(g=>{if(!g||!Array.isArray(g.it))throw new Error('Invalid section');
   g.it.forEach(i=>{if(!Array.isArray(i.ls)){const n=Number.isSafeInteger(i.done)&&i.done>=0?i.done:0;if(n>5000||generated+n>MAX_LECTURES)throw new Error('Legacy lecture count exceeds safe migration limit');generated+=n;i.ls=[];for(let k=1;k<=n;k++)i.ls.push({id:uid(),n:'محاضرة '+k,at:i.last||Date.now()})}
