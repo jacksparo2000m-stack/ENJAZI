@@ -133,10 +133,12 @@ const NativeLocalNotifications = new Proxy(LocalNotifications, {
   }
 });
 
+
 window.NativePlugins = {
   Filesystem,
   Directory,
   Encoding,
   Share,
+  PersistentTasks,
   LocalNotifications: NativeLocalNotifications
 };
