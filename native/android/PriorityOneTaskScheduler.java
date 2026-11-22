@@ -283,11 +283,12 @@ if (removed || dueChanged || notificationChanged) {
             <= System.currentTimeMillis()) {
 
             PersistentTaskNotifications.show(
-                context,
-                item.optInt("notificationId"),
-                item.optString("title"),
-                item.optString("body")
-            );
+    context,
+    item.optInt("notificationId"),
+    item.optString("title"),
+    item.optString("body"),
+    item.optString("taskId")
+);
         }
     }
 
@@ -317,11 +318,12 @@ if (removed || dueChanged || notificationChanged) {
 
             if (dueAt <= now) {
                 PersistentTaskNotifications.show(
-                    context,
-                    item.optInt("notificationId"),
-                    item.optString("title"),
-                    item.optString("body")
-                );
+    context,
+    item.optInt("notificationId"),
+    item.optString("title"),
+    item.optString("body"),
+    item.optString("taskId")
+);
             } else {
                 schedule(context, item);
             }
@@ -377,11 +379,12 @@ if (removed || dueChanged || notificationChanged) {
         }
 
         PersistentTaskNotifications.show(
-            context,
-            notificationId,
-            current.optString("title"),
-            current.optString("body")
-        );
+    context,
+    notificationId,
+    current.optString("title"),
+    current.optString("body"),
+    current.optString("taskId")
+);
     }
 
     private static boolean schedule(
