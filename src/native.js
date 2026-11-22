@@ -75,9 +75,12 @@ const priorityOneTasks = state.tasks
     return {
       taskId,
       notificationId: notificationId('p1' + taskId),
-      title,
-      body: task.d
-        + (task.tm ? ' · ' + String(task.tm) : ''),
+            title,
+      body: [
+        String(task.n || '').trim(),
+        task.d
+          + (task.tm ? ' · ' + String(task.tm) : '')
+      ].filter(Boolean).join('\n'),
       dueAt
     };
   });
