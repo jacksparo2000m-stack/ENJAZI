@@ -597,6 +597,25 @@ test('priority one plugin rejects missing task arrays and delegates scheduling',
   assert.match(plugin, /result\.put\("taskId", taskId\)/);
 });
 
+
+test('native bridge exposes PersistentTasks to the application', () => {
+  assert.match(
+    native,
+    /window\.NativePlugins\s*=\s*\{[\s\S]*?PersistentTasks\s*,/
+  );
+
+  assert.match(
+    html,
+    /NP\.PersistentTasks\.consumePendingTask\(\)/
+  );
+
+  assert.match(
+    native,
+    /consumePendingTask/
+  );
+});
+
+
 test('priority one receiver delegates due alarms to the scheduler', () => {
   const receiver = fs.readFileSync(
     path.join(root, 'native/android/PriorityOneTaskReceiver.java'),
