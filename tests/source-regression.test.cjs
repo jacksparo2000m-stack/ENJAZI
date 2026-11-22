@@ -585,6 +585,12 @@ test('priority one plugin rejects missing task arrays and delegates scheduling',
   assert.match(plugin, /syncPriorityOne\(PluginCall call\)/);
   assert.match(plugin, /if \(tasks == null\)/);
   assert.match(plugin, /PriorityOneTaskScheduler\.sync\(getContext\(\), tasks\)/);
+    // Notification taps must expose and consume the pending task ID.
+  assert.match(plugin, /consumePendingTask\(PluginCall call\)/);
+  assert.match(plugin, /getActivity\(\)\.getIntent\(\)/);
+  assert.match(plugin, /getStringExtra\("enjaziTaskId"\)/);
+  assert.match(plugin, /removeExtra\("enjaziTaskId"\)/);
+  assert.match(plugin, /result\.put\("taskId", taskId\)/);
 });
 
 test('priority one receiver delegates due alarms to the scheduler', () => {
