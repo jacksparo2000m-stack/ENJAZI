@@ -113,31 +113,78 @@ final class PersistentTaskNotifications {
         manager.createNotificationChannel(channel);
     }
 
-    static void show(Context context, int id, String title, String body) {
-        if (id <= 0) return;
-        Intent launch = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-        PendingIntent content = null;
-        if (launch != null) {
-            launch.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
-            content = PendingIntent.getActivity(context, id, launch, flags);
+    
+static void show(Context context, int id, String title, String body) {
+    show(context, id, title, body, null);
+}
+
+static void show(
+    Context context,
+    int id,
+    String title,
+    String body,
+    String taskId
+) {
+    if (id <= 0) return;
+
+    Intent launch = context.getPackageManager()
+        .getLaunchIntentForPackage(context.getPackageName());
+
+    PendingIntent content = null;
+
+    if (launch != null) {
+        launch.addFlags(
+            Intent.FLAG_ACTIVITY_CLEAR_TOP |
+            Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+
+        if (taskId != null && !taskId.trim().isEmpty()) {
+            launch.putExtra("enjaziTaskId", taskId);
         }
-        ApplicationInfo app = context.getApplicationInfo();
-        int icon = app.icon != 0 ? app.icon : android.R.drawable.ic_dialog_info;
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL)
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        content = PendingIntent.getActivity(
+            context,
+            id,
+            launch,
+            flags
+        );
+    }
+
+    ApplicationInfo app = context.getApplicationInfo();
+    int icon = app.icon != 0
+        ? app.icon
+        : android.R.drawable.ic_dialog_info;
+
+    NotificationCompat.Builder builder =
+        new NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(icon)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+            .setStyle(
+                new NotificationCompat.BigTextStyle().bigText(body)
+            )
             .setOngoing(true)
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
-        if (content != null) builder.setContentIntent(content);
-        try { NotificationManagerCompat.from(context).notify(id, builder.build()); }
-        catch (SecurityException ignored) {}
+
+    if (content != null) {
+        builder.setContentIntent(content);
     }
+
+    try {
+        NotificationManagerCompat.from(context).notify(
+            id,
+            builder.build()
+        );
+    } catch (SecurityException ignored) {}
+}
 }
