@@ -1008,8 +1008,6 @@ for(const [i,x] of (o.tasks||[]).entries()){
  const g=(o.groups||[]).find(a=>a.id===parts[0]);
  if(!g||!g.it.some(a=>a.id===parts[1]))return W('المهمة رقم '+(i+1)+' — المادة المرتبطة غير موجودة','task #'+(i+1)+' — linked item does not exist');
 }
-return '';
-};
  if(Object.prototype.hasOwnProperty.call(o,'deadlines')&&!AR(o.deadlines))return W('قائمة المواعيد النهائية غير صالحة','invalid deadlines array');
 if((o.deadlines||[]).length>MAX_NOTES)return W('عدد المواعيد النهائية أكبر من الحد الآمن','deadline count exceeds safe limit');
 
@@ -1035,6 +1033,8 @@ for(const [i,d] of (o.deadlines||[]).entries()){
   if(!taskIds.has(taskId))return W('الموعد النهائي رقم '+(i+1)+' — المهمة المرتبطة غير موجودة','deadline #'+(i+1)+' — linked task does not exist');
  }
 }
+ return '';
+};
 $('#imp').addEventListener('change',e=>{
  const el=e.target,fl=el.files&&el.files[0];if(!fl)return;
  if(fl.size>10*1024*1024){
