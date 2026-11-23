@@ -847,7 +847,66 @@ const isDeadlineCompleted=deadline=>{
  });
 };
 
-const H={dlnew:()=>openDeadlineSheet(),dlclose:()=>{DL=null;$('#sh').hidden=1},nv:i=>{v=i;render()},nn:()=>openNoteSheet(), ne:i=>editNoteSheet(i), nclose:()=>{ND=null;$('#sh').hidden=1}, ndel:async()=>{  if(!ND)return;  const note=S.notes.find(n=>n.id===ND.id);  if(!note)return;   if(!confirm(T(   'هل أنت متأكد من حذف الملاحظة: ','Are you sure you want to delete the note: '  )+note.title+'؟'))return;   const index=S.notes.findIndex(n=>n.id===ND.id);  if(index<0)return;   S.notes.splice(index,1);   const ok=await save(false);  if(ok){   ND=null;   $('#sh').hidden=1;   render();  } }, nsave:async()=>{  const title=$('#nt').value.trim();  const content=$('#nc').value; const subjectId=$('#noteSubject').value;   if(!title)return toast(T('اكتب عنوان الملاحظة','Enter a note title'));  if(title.length>500||content.length>100000)return toast(T('الملاحظة أكبر من الحد المسموح','Note exceeds the allowed limit'));  const index=S.notes.findIndex(n=>n.id===ND.id);  const currentTotal=S.notes.reduce((a,n)=>a+n.content.length,0); const projectedCount=S.notes.length+(index<0?1:0); const projectedTotal=currentTotal-(index<0?0:S.notes[index].content.length)+content.length;  if(projectedCount>50000||projectedTotal>500000)  return toast(T('وصلت للحد الآمن للملاحظات','Safe notes limit reached'));   const note={...ND,title,content,subjectId,updatedAt:Date.now()};
+const H={dlnew:()=>openDeadlineSheet(),dlclose:()=>{DL=null;$('#sh').hidden=1},dlsave:async()=>{
+ const title=$('#dltitle').value.trim();
+ const description=$('#dldesc').value;
+ const dueDate=$('#dldate').value;
+ const dueTime=$('#dltime').value;
+
+ if(!title)
+  return toast(T('اكتب عنوان الموعد','Enter a deadline title'));
+
+ if(title.length>500||description.length>10000)
+  return toast(T('تجاوزت الحد المسموح للنص','Text exceeds the allowed limit'));
+
+ const dateMatch=dueDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ const timeMatch=dueTime.match(/^([01]\d|2[0-3]):[0-5]\d$/);
+
+ if(!dateMatch||!timeMatch)
+  return toast(T('تأكد من صحة التاريخ والوقت','Check the date and time'));
+
+ const check=new Date(0);
+ check.setUTCFullYear(+dateMatch[1],+dateMatch[2]-1,+dateMatch[3]);
+
+ if(check.getUTCFullYear()!==+dateMatch[1]||
+    check.getUTCMonth()!==+dateMatch[2]-1||
+    check.getUTCDate()!==+dateMatch[3])
+  return toast(T('تاريخ الموعد غير صالح','Invalid deadline date'));
+
+ const taskIds=[...document.querySelectorAll('input[name="dlTask"]:checked')]
+  .map(el=>el.value);
+
+ if(!taskIds.length)
+  return toast(T('اختر مهمة واحدة على الأقل','Select at least one task'));
+
+ if(taskIds.some(id=>!S.tasks.some(task=>task.id===id)))
+  return toast(T('إحدى المهام المختارة لم تعد موجودة','A selected task no longer exists'));
+
+ if(!Array.isArray(S.deadlines)||S.deadlines.length>=50000)
+  return toast(T('وصلت للحد المسموح للمواعيد','Deadline limit reached'));
+
+ const now=Date.now();
+
+ const deadline={
+  ...DL,
+  title,
+  description,
+  dueDate,
+  dueTime,
+  taskIds,
+  updatedAt:now
+ };
+
+ S.deadlines.push(deadline);
+
+ const ok=await save();
+
+ if(ok){
+  DL=null;
+  $('#sh').hidden=1;
+  render();
+ }
+},nv:i=>{v=i;render()},nn:()=>openNoteSheet(), ne:i=>editNoteSheet(i), nclose:()=>{ND=null;$('#sh').hidden=1}, ndel:async()=>{  if(!ND)return;  const note=S.notes.find(n=>n.id===ND.id);  if(!note)return;   if(!confirm(T(   'هل أنت متأكد من حذف الملاحظة: ','Are you sure you want to delete the note: '  )+note.title+'؟'))return;   const index=S.notes.findIndex(n=>n.id===ND.id);  if(index<0)return;   S.notes.splice(index,1);   const ok=await save(false);  if(ok){   ND=null;   $('#sh').hidden=1;   render();  } }, nsave:async()=>{  const title=$('#nt').value.trim();  const content=$('#nc').value; const subjectId=$('#noteSubject').value;   if(!title)return toast(T('اكتب عنوان الملاحظة','Enter a note title'));  if(title.length>500||content.length>100000)return toast(T('الملاحظة أكبر من الحد المسموح','Note exceeds the allowed limit'));  const index=S.notes.findIndex(n=>n.id===ND.id);  const currentTotal=S.notes.reduce((a,n)=>a+n.content.length,0); const projectedCount=S.notes.length+(index<0?1:0); const projectedTotal=currentTotal-(index<0?0:S.notes[index].content.length)+content.length;  if(projectedCount>50000||projectedTotal>500000)  return toast(T('وصلت للحد الآمن للملاحظات','Safe notes limit reached'));   const note={...ND,title,content,subjectId,updatedAt:Date.now()};
 
 
 if(index<0)S.notes.push(note);
