@@ -157,6 +157,8 @@ async function syncPersistentTasksFromStorage() {
     }
 
     const ar = state.lang !== 'en';
+    const deadlineNotifications =
+  buildPersistentDeadlines(state, ar);
 
     // Existing priority 2/3 notifications — behavior unchanged.
     const notifications = state.tasks
