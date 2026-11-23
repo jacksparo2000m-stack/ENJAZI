@@ -811,6 +811,12 @@ test('Deadline notification builder preserves active and empty-link deadlines', 
   };
 
   const result = helpers.buildPersistentDeadlines(state);
+  assert.throws(
+  () => helpers.buildPersistentDeadlines({
+    tasks: state.tasks
+  }),
+  /Invalid saved deadlines collection/
+);
 
   assert.deepEqual(
     Array.from(result, item => item.deadlineId),
