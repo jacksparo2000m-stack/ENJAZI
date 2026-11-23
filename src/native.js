@@ -56,6 +56,89 @@ function deadlineNotificationId(value, usedIds = new Set()) {
 }
 
 
+function buildPersistentDeadlines(state, ar) {
+  const deadlines = state.deadlines === undefined
+    ? []
+    : state.deadlines;
+
+  if (!Array.isArray(deadlines)) {
+    throw new Error('Invalid saved deadlines collection');
+  }
+
+  const tasksById = new Map(
+    state.tasks
+      .filter(task => task && task.id != null)
+      .map(task => [String(task.id), task])
+  );
+
+  const active = deadlines
+    .filter(deadline => {
+      if (
+        !deadline ||
+        typeof deadline.id !== 'string' ||
+        !Array.isArray(deadline.taskIds)
+      ) {
+        throw new Error('Invalid saved Deadline record');
+      }
+
+      // An empty linked-task list stays active.
+      // Missing linked tasks also must not mark it completed.
+      const completed = deadline.taskIds.length > 0
+        && deadline.taskIds.every(id => {
+          const task = tasksById.get(String(id));
+          return !!task && !!task.x;
+        });
+
+      return !completed;
+    })
+    .sort((a, b) =>
+      a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+    );
+
+  const usedIds = new Set();
+
+  return active.map(deadline => {
+    const deadlineId = deadline.id.trim();
+    const title = String(deadline.title || '').trim();
+    const dueDate = String(deadline.dueDate || '');
+    const dueTime = String(deadline.dueTime || '');
+
+    const dueAt = new Date(
+      dueDate + 'T' + dueTime
+    ).getTime();
+
+    if (
+      !deadlineId ||
+      !title ||
+      !Number.isFinite(dueAt) ||
+      dueAt <= 0
+    ) {
+      throw new Error('Invalid active Deadline data');
+    }
+
+    const description = String(
+      deadline.description || ''
+    ).trim();
+
+    const body = [
+      description,
+      dueDate + (dueTime ? ' · ' + dueTime : '')
+    ].filter(Boolean).join('\n');
+
+    return {
+      deadlineId,
+      notificationId: deadlineNotificationId(
+        deadlineId,
+        usedIds
+      ),
+      title,
+      body,
+      dueAt
+    };
+  });
+}
+
+
 // Read the same saved task state used by index.html. This deliberately does
 // not rely on the optional per-task pin checkbox: every active medium/high
 // priority task is kept visible as requested.
