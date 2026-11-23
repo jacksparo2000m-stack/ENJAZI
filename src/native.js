@@ -27,6 +27,22 @@ function notificationId(value) {
   return Math.abs(hash) % 2000000000 + 1;
 }
 
+// Reserved notification ID range for ENJAZI Deadlines.
+const DEADLINE_NOTIFICATION_ID_MIN = 2000000001;
+const DEADLINE_NOTIFICATION_ID_RANGE = 147483647;
+
+function deadlineNotificationId(value) {
+  let hash = 7;
+
+  for (const char of String(value)) {
+    hash = (Math.imul(hash, 31) + char.charCodeAt(0)) | 0;
+  }
+
+  return DEADLINE_NOTIFICATION_ID_MIN
+    + ((hash >>> 0) % DEADLINE_NOTIFICATION_ID_RANGE);
+}
+
+
 // Read the same saved task state used by index.html. This deliberately does
 // not rely on the optional per-task pin checkbox: every active medium/high
 // priority task is kept visible as requested.
