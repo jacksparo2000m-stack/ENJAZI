@@ -57,13 +57,11 @@ function deadlineNotificationId(value, usedIds = new Set()) {
 
 
 function buildPersistentDeadlines(state, ar) {
-  const deadlines = state.deadlines === undefined
-    ? []
-    : state.deadlines;
+  const deadlines = state.deadlines;
 
-  if (!Array.isArray(deadlines)) {
-    throw new Error('Invalid saved deadlines collection');
-  }
+if (!Array.isArray(deadlines)) {
+  throw new Error('Invalid saved deadlines collection');
+}
 
   const tasksById = new Map(
     state.tasks
