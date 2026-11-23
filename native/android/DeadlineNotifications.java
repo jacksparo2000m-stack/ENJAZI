@@ -193,18 +193,74 @@ final class DeadlineNotifications {
             return;
         }
 
+        
         if (!NotificationManagerCompat.from(context)
             .areNotificationsEnabled()) {
             return;
         }
 
-        ensureChannel(context);
+        JSONArray safe = new JSONArray();
+        Set<String> deadlineIds = new HashSet<>();
+        Set<Integer> notificationIds = new HashSet<>();
 
+        // Validate all saved deadlines before restoring any notification.
         for (int i = 0; i < saved.length(); i++) {
 
             JSONObject item = saved.optJSONObject(i);
 
-            if (item == null) continue;
+            if (item == null) return;
+
+            Object rawDeadlineId = item.opt("deadlineId");
+            Object rawNotificationId = item.opt("notificationId");
+            Object rawTitle = item.opt("title");
+            Object rawBody = item.opt("body");
+            Object rawDueAt = item.opt("dueAt");
+
+            if (!(rawDeadlineId instanceof String)
+                || !(rawNotificationId instanceof Number)
+                || !(rawTitle instanceof String)
+                || !(rawBody instanceof String)
+                || !(rawDueAt instanceof Number)) {
+                return;
+            }
+
+            String deadlineId =
+                ((String) rawDeadlineId).trim();
+
+            String title =
+                ((String) rawTitle).trim();
+
+            long rawId =
+                ((Number) rawNotificationId).longValue();
+
+            long dueAt =
+                ((Number) rawDueAt).longValue();
+
+            if (deadlineId.isEmpty()
+                || title.isEmpty()
+                || rawId < MIN_NOTIFICATION_ID
+                || rawId > MAX_NOTIFICATION_ID
+                || ((Number) rawNotificationId).doubleValue() != rawId
+                || dueAt <= 0
+                || ((Number) rawDueAt).doubleValue() != dueAt) {
+                return;
+            }
+
+            int notificationId = (int) rawId;
+
+            if (!deadlineIds.add(deadlineId)
+                || !notificationIds.add(notificationId)) {
+                return;
+            }
+
+            safe.put(item);
+        }
+
+        ensureChannel(context);
+
+        for (int i = 0; i < safe.length(); i++) {
+
+            JSONObject item = safe.optJSONObject(i);
 
             show(
                 context,
@@ -215,6 +271,7 @@ final class DeadlineNotifications {
                 item.optLong("dueAt", -1)
             );
         }
+
     }
 
     private static void ensureChannel(Context context) {
