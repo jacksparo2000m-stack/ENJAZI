@@ -2,6 +2,8 @@
 package com.jacksparo.enjazi;
 
 import android.app.NotificationChannel;
+private static final int MIN_NOTIFICATION_ID = 2000000001;
+private static final int MAX_NOTIFICATION_ID = Integer.MAX_VALUE;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -76,10 +78,10 @@ final class DeadlineNotifications {
             long dueAt =
                 ((Number) rawDueAt).longValue();
 
-            if (deadlineId.isEmpty()
+                if (deadlineId.isEmpty()
                 || title.isEmpty()
-                || rawId <= 0
-                || rawId > Integer.MAX_VALUE
+                || rawId < MIN_NOTIFICATION_ID
+                || rawId > MAX_NOTIFICATION_ID
                 || dueAt <= 0) {
                 return false;
             }
