@@ -661,14 +661,15 @@ function openDeadlineSheet(id=null){
  };
  $('#sh').innerHTML=`
   <div class="bx">
-   <h2>${T('موعد نهائي جديد','New deadline')}</h2>
+   <h2>${DL.title?T('تعديل الموعد','Edit deadline'):T('موعد نهائي جديد','New deadline')}</h2>
 
    <label>${T('عنوان الموعد','Deadline title')}</label>
    <input id="dltitle" class="in"
-    placeholder="${T('مثال: تسليم مشروع البرمجة','Example: Programming project submission')}">
+ value="${E(DL.title||'')}"
+ placeholder="${T('مثال: تسليم مشروع البرمجة','Example: Programming project submission')}">
 
    <label>${T('الوصف (اختياري)','Description (optional)')}</label>
-   <textarea id="dldesc" rows="3"
+   <textarea id="dldesc" rows="3">${E(DL.description||'')}</textarea>
     placeholder="${T('تفاصيل إضافية','Additional details')}"></textarea>
 
    <label>${T('تاريخ الموعد','Due date')}</label>
@@ -677,7 +678,7 @@ function openDeadlineSheet(id=null){
 
    <label>${T('وقت الموعد','Due time')}</label>
    <input id="dltime" class="in" type="time"
-    value="${p2(now.getHours())}:${p2(now.getMinutes())}">
+    value="${E(DL.dueTime||`${p2(now.getHours())}:${p2(now.getMinutes())}`)}"
 
    <label>${T('المهام المرتبطة','Linked tasks')}</label>
 
@@ -685,7 +686,8 @@ function openDeadlineSheet(id=null){
     ${S.tasks.length?S.tasks.map(task=>`
      <label style="display:block;margin:10px 0">
       <input type="checkbox" name="dlTask"
-       value="${E(task.id)}">
+ value="${E(task.id)}"
+ ${DL.taskIds.includes(task.id)?'checked':''}>
       ${E(task.t||'')}
      </label>
     `).join(''):`<p>${T('لا توجد مهام لإضافتها حاليًا','No tasks available')}</p>`}
