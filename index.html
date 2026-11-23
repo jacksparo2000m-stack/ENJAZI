@@ -640,6 +640,44 @@ function notesView(){
 `;
 }
 
+ 
+function deadlinesView(){
+ const deadlines=Array.isArray(S.deadlines)?S.deadlines:[];
+
+ if(!deadlines.length){
+  return `<h1>⏳ ${T('المواعيد النهائية','Deadlines')}</h1>
+   <div class="empty">
+    ⏳
+    <h2>${T('لا توجد مواعيد نهائية بعد','No deadlines yet')}</h2>
+    <p>${T('أنشئ موعدك النهائي الأول واربطه بمهامك','Create your first deadline and link it to your tasks')}</p>
+   </div>`;
+ }
+
+ const sorted=[...deadlines].sort((a,b)=>{
+  const da=new Date((a.dueDate||'')+'T'+(a.dueTime||'00:00')).getTime();
+  const db=new Date((b.dueDate||'')+'T'+(b.dueTime||'00:00')).getTime();
+  return da-db;
+ });
+
+ return `<h1>⏳ ${T('المواعيد النهائية','Deadlines')}</h1>
+  <div class="sub">${T('تابع مواعيدك وإنجاز المهام المرتبطة بها','Track your deadlines and linked tasks')}</div>
+  ${sorted.map(d=>{
+   const ids=Array.isArray(d.taskIds)?d.taskIds:[];
+   const completed=isDeadlineCompleted(d);
+   return `<div class="card">
+    <div class="row">
+     <b>${E(d.title||'')}</b>
+     <span class="tag">${completed?T('مكتمل','Completed'):T('نشط','Active')}</span>
+    </div>
+    ${d.description?`<p>${E(d.description)}</p>`:''}
+    <div class="mt">
+     <span>📅 ${E(fdt(d.dueDate,d.dueTime))}</span>
+     <span>📋 ${ids.length} ${T('مهام مرتبطة','linked tasks')}</span>
+    </div>
+   </div>`;
+  }).join('')}`;
+}
+
  function render(){const h=document.documentElement;h.lang=S.lang;h.dir=S.lang==='ar'?'rtl':'ltr';h.dataset.th=S.th;h.dataset.fs=S.fs;
 if(RECOVERY){$('#app').innerHTML=recoveryView();$('#fab').hidden=true;$('#nav').hidden=true;$('#nav').innerHTML='';$('#sh').hidden=true;return}
 $('#nav').hidden=false;$('#app').innerHTML=v==='todo'?todo():v==='track'?track():v==='notes'?notesView():sets();$('#fab').hidden=v!=='todo';
