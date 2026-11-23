@@ -2,8 +2,6 @@
 package com.jacksparo.enjazi;
 
 import android.app.NotificationChannel;
-private static final int MIN_NOTIFICATION_ID = 2000000001;
-private static final int MAX_NOTIFICATION_ID = Integer.MAX_VALUE;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -36,6 +34,8 @@ final class DeadlineNotifications {
 
     private static final String CHANNEL =
         "enjazi_deadlines_v1";
+    private static final int MIN_NOTIFICATION_ID = 2000000001;
+    private static final int MAX_NOTIFICATION_ID = Integer.MAX_VALUE;
 
     private DeadlineNotifications() {}
 
