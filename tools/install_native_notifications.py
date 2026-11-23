@@ -13,6 +13,7 @@ TARGET_DIR.mkdir(parents=True, exist_ok=True)
 
 for filename in (
     "PersistentTaskNotifications.java",
+    "DeadlineNotifications.java",
     "PersistentTasksPlugin.java",
     "PersistentTaskRestoreReceiver.java",
     "PriorityOneTaskReceiver.java",
