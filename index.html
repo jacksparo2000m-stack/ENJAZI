@@ -640,7 +640,64 @@ function notesView(){
 `;
 }
 
+
  
+let DL=null;
+
+function openDeadlineSheet(){
+ const now=new Date();
+
+ DL={
+  id:uid(),
+  createdAt:Date.now(),
+  updatedAt:Date.now()
+ };
+
+ $('#sh').innerHTML=`
+  <div class="bx">
+   <h2>${T('موعد نهائي جديد','New deadline')}</h2>
+
+   <label>${T('عنوان الموعد','Deadline title')}</label>
+   <input id="dltitle" class="in"
+    placeholder="${T('مثال: تسليم مشروع البرمجة','Example: Programming project submission')}">
+
+   <label>${T('الوصف (اختياري)','Description (optional)')}</label>
+   <textarea id="dldesc" rows="3"
+    placeholder="${T('تفاصيل إضافية','Additional details')}"></textarea>
+
+   <label>${T('تاريخ الموعد','Due date')}</label>
+   <input id="dldate" class="in" type="date"
+    value="${iso(now)}">
+
+   <label>${T('وقت الموعد','Due time')}</label>
+   <input id="dltime" class="in" type="time"
+    value="${p2(now.getHours())}:${p2(now.getMinutes())}">
+
+   <label>${T('المهام المرتبطة','Linked tasks')}</label>
+
+   <div class="card">
+    ${S.tasks.length?S.tasks.map(task=>`
+     <label style="display:block;margin:10px 0">
+      <input type="checkbox" name="dlTask"
+       value="${E(task.id)}">
+      ${E(task.t||'')}
+     </label>
+    `).join(''):`<p>${T('لا توجد مهام لإضافتها حاليًا','No tasks available')}</p>`}
+   </div>
+
+   <div class="two" style="margin-top:16px">
+    <button class="btn o" data-a="dlclose">
+     ${T('إلغاء','Cancel')}
+    </button>
+    <button class="btn" data-a="dlsave">
+     ${T('حفظ الموعد','Save deadline')}
+    </button>
+   </div>
+  </div>`;
+
+ $('#sh').hidden=0;
+}
+
 function deadlinesView(){
  const deadlines=Array.isArray(S.deadlines)?S.deadlines:[];
 
