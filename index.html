@@ -644,15 +644,21 @@ function notesView(){
  
 let DL=null;
 
-function openDeadlineSheet(){
+function openDeadlineSheet(id=null){
+ const existing=id?S.deadlines.find(d=>d.id===id):null;
+
+ if(id&&!existing)return;
+
  const now=new Date();
 
- DL={
+ DL=existing?{
+  ...existing,
+  taskIds:[...(existing.taskIds||[])]
+ }:{
   id:uid(),
   createdAt:Date.now(),
   updatedAt:Date.now()
  };
-
  $('#sh').innerHTML=`
   <div class="bx">
    <h2>${T('موعد نهائي جديد','New deadline')}</h2>
