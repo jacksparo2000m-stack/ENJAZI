@@ -855,7 +855,7 @@ const isDeadlineCompleted=deadline=>{
  });
 };
 
-const H={dlnew:()=>openDeadlineSheet(),dlclose:()=>{DL=null;$('#sh').hidden=1},dlsave:async()=>{
+const H={dlnew:()=>openDeadlineSheet(),dledit:i=>openDeadlineSheet(i),dlclose:()=>{DL=null;$('#sh').hidden=1},dlsave:async()=>{
  const title=$('#dltitle').value.trim();
  const description=$('#dldesc').value;
  const dueDate=$('#dldate').value;
