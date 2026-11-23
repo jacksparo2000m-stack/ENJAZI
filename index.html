@@ -669,17 +669,17 @@ function openDeadlineSheet(id=null){
  placeholder="${T('مثال: تسليم مشروع البرمجة','Example: Programming project submission')}">
 
    <label>${T('الوصف (اختياري)','Description (optional)')}</label>
-   <textarea id="dldesc" rows="3">${E(DL.description||'')}</textarea>
-    placeholder="${T('تفاصيل إضافية','Additional details')}"></textarea>
+<textarea id="dldesc" rows="3"
+ placeholder="${T('تفاصيل إضافية','Additional details')}">${E(DL.description||'')}</textarea>
 
-   <label>${T('تاريخ الموعد','Due date')}</label>
-   <input id="dldate" class="in" type="date"
-    value="${iso(now)}">
+<label>${T('تاريخ الموعد','Due date')}</label>
+<input id="dldate" class="in" type="date"
+ value="${E(DL.dueDate||iso(now))}">
 
-   <label>${T('وقت الموعد','Due time')}</label>
-   <input id="dltime" class="in" type="time"
-    value="${E(DL.dueTime||`${p2(now.getHours())}:${p2(now.getMinutes())}`)}"
-
+<label>${T('وقت الموعد','Due time')}</label>
+<input id="dltime" class="in" type="time"
+ value="${E(DL.dueTime||`${p2(now.getHours())}:${p2(now.getMinutes())}`)}">
+ 
    <label>${T('المهام المرتبطة','Linked tasks')}</label>
 
    <div class="card">
