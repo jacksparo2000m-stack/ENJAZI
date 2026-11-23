@@ -659,8 +659,9 @@ function openDeadlineSheet(id=null){
   taskIds:[...(existing.taskIds||[])]
  }:{
   id:uid(),
-  createdAt:Date.now(),
-  updatedAt:Date.now()
+taskIds:[],
+createdAt:Date.now(),
+updatedAt:Date.now()
  };
  $('#sh').innerHTML=`
   <div class="bx">
