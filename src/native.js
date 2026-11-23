@@ -217,6 +217,7 @@ const priorityOneTasks = state.tasks
     await PersistentTasks.syncPriorityOne({
       tasks: priorityOneTasks
     });
+    await syncPersistentDeadlines(deadlineNotifications);
 
     return new Set(notifications.map(item => item.id));
 
