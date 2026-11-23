@@ -58,6 +58,31 @@ public class PersistentTasksPlugin extends Plugin {
         call.resolve();
     }
 
+        @PluginMethod
+    public void syncDeadlines(PluginCall call) {
+        JSONArray deadlines =
+            call.getData().optJSONArray("deadlines");
+
+        if (deadlines == null) {
+            call.reject(
+                "Missing deadlines array; refusing to clear saved deadlines"
+            );
+            return;
+        }
+
+        if (!DeadlineNotifications.sync(
+            getContext(),
+            deadlines
+        )) {
+            call.reject(
+                "Could not save persistent deadline notifications"
+            );
+            return;
+        }
+
+        call.resolve();
+    }
+    
     @PluginMethod
     public void cancel(PluginCall call) {
         JSONArray ids = call.getData().optJSONArray("ids");
@@ -96,6 +121,28 @@ public class PersistentTasksPlugin extends Plugin {
 
         if (taskId != null && !taskId.trim().isEmpty()) {
             result.put("taskId", taskId);
+        }
+
+        call.resolve(result);
+    }
+        @PluginMethod
+    public void consumePendingDeadline(PluginCall call) {
+        android.content.Intent intent =
+            getActivity().getIntent();
+
+        String deadlineId =
+            intent.getStringExtra("enjaziDeadlineId");
+
+        if (deadlineId != null) {
+            intent.removeExtra("enjaziDeadlineId");
+            getActivity().setIntent(intent);
+        }
+
+        com.getcapacitor.JSObject result =
+            new com.getcapacitor.JSObject();
+
+        if (deadlineId != null && !deadlineId.trim().isEmpty()) {
+            result.put("deadlineId", deadlineId);
         }
 
         call.resolve(result);
