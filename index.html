@@ -858,7 +858,7 @@ const isDeadlineCompleted=deadline=>{
  });
 };
 
-const H={dlnew:()=>openDeadlineSheet(),dledit:i=>openDeadlineSheet(i),dlclose:()=>{DL=null;$('#sh').hidden=1},dldel:async()=>{dlsave:async()=>{
+const H={dlnew:()=>openDeadlineSheet(),dledit:i=>openDeadlineSheet(i),dlclose:()=>{DL=null;$('#sh').hidden=1},dldel:async()=>{  if(!DL)return;   const deadline=S.deadlines.find(d=>d.id===DL.id);  if(!deadline)return;   if(!confirm(T('هل أنت متأكد من حذف الموعد؟','Are you sure you want to delete this deadline?')))   return;   const index=S.deadlines.findIndex(d=>d.id===DL.id);  if(index<0)return;   S.deadlines.splice(index,1);   const ok=await save();   if(ok){   DL=null;   $('#sh').hidden=1;   render();  } },dlsave:async()=>{
  const title=$('#dltitle').value.trim();
  const description=$('#dldesc').value;
  const dueDate=$('#dldate').value;
