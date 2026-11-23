@@ -905,7 +905,7 @@ const H={dlnew:()=>openDeadlineSheet(),dlclose:()=>{DL=null;$('#sh').hidden=1},d
   updatedAt:now
  };
 
- S.deadlines.push(deadline);
+ const index=S.deadlines.findIndex(d=>d.id===DL.id);  if(index<0)S.deadlines.push(deadline); else S.deadlines[index]=deadline;
 
  const ok=await save();
 
