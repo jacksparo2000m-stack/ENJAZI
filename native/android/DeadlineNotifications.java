@@ -299,7 +299,7 @@ final class DeadlineNotifications {
             "إشعارات ثابتة للمواعيد النهائية مع عد تنازلي"
         );
 
-        channel.setShowBadge(true);
+        channel.setShowBadge(false);
 
         manager.createNotificationChannel(channel);
     }
