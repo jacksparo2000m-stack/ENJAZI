@@ -10,6 +10,35 @@ import org.json.JSONArray;
 
 @CapacitorPlugin(name = "PersistentTasks")
 public class PersistentTasksPlugin extends Plugin {
+    
+    @Override
+    protected void handleOnNewIntent(android.content.Intent intent) {
+        super.handleOnNewIntent(intent);
+
+        String taskId = intent.getStringExtra("enjaziTaskId");
+        String deadlineId = intent.getStringExtra("enjaziDeadlineId");
+
+        if (
+            (taskId == null || taskId.trim().isEmpty()) &&
+            (deadlineId == null || deadlineId.trim().isEmpty())
+        ) {
+            return;
+        }
+
+        com.getcapacitor.JSObject data =
+            new com.getcapacitor.JSObject();
+
+        if (taskId != null && !taskId.trim().isEmpty()) {
+            data.put("taskId", taskId);
+        }
+
+        if (deadlineId != null && !deadlineId.trim().isEmpty()) {
+            data.put("deadlineId", deadlineId);
+        }
+
+        notifyListeners("notificationOpen", data, true);
+    }
+
 
     @PluginMethod
     public void sync(PluginCall call) {
