@@ -884,7 +884,7 @@ const H={dlnew:()=>openDeadlineSheet(),dlclose:()=>{DL=null;$('#sh').hidden=1},d
  const taskIds=[...document.querySelectorAll('input[name="dlTask"]:checked')]
   .map(el=>el.value);
 
- if(!taskIds.length)
+ if(!taskIds.length&& !S.deadlines.some(d=>d.id===DL.id))
   return toast(T('اختر مهمة واحدة على الأقل','Select at least one task'));
 
  if(taskIds.some(id=>!S.tasks.some(task=>task.id===id)))
