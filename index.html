@@ -646,6 +646,7 @@ function deadlinesView(){
 
  if(!deadlines.length){
   return `<h1>⏳ ${T('المواعيد النهائية','Deadlines')}</h1>
+  <button class="btn w" data-a="dlnew">＋ ${T('موعد نهائي جديد','New deadline')}</button>
    <div class="empty">
     ⏳
     <h2>${T('لا توجد مواعيد نهائية بعد','No deadlines yet')}</h2>
@@ -660,6 +661,7 @@ function deadlinesView(){
  });
 
  return `<h1>⏳ ${T('المواعيد النهائية','Deadlines')}</h1>
+ <button class="btn w" data-a="dlnew">＋ ${T('موعد نهائي جديد','New deadline')}</button>
   <div class="sub">${T('تابع مواعيدك وإنجاز المهام المرتبطة بها','Track your deadlines and linked tasks')}</div>
   ${sorted.map(d=>{
    const ids=Array.isArray(d.taskIds)?d.taskIds:[];
