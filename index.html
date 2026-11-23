@@ -680,7 +680,7 @@ function deadlinesView(){
 
  function render(){const h=document.documentElement;h.lang=S.lang;h.dir=S.lang==='ar'?'rtl':'ltr';h.dataset.th=S.th;h.dataset.fs=S.fs;
 if(RECOVERY){$('#app').innerHTML=recoveryView();$('#fab').hidden=true;$('#nav').hidden=true;$('#nav').innerHTML='';$('#sh').hidden=true;return}
-$('#nav').hidden=false;$('#app').innerHTML=v==='todo'?todo():v==='track'?track():v==='notes'?notesView():sets();$('#fab').hidden=v!=='todo';
+$('#nav').hidden=false;$('#app').innerHTML=v==='todo'?todo():v==='track'?track():v==='notes'?notesView():v==='deadlines'?deadlinesView():sets();$('#fab').hidden=v!=='todo';
 $('#nav').innerHTML=[['todo','✓',T('المهام','Tasks')],['track','▤',T('الإنجاز','Progress')],['notes','📝',T('المفكرة','Notepad')],['set','⚙',T('الإعدادات','Settings')]].map(([k,i,l])=>`<button class="${v===k?'on':''}" data-a="nv" data-i="${k}">${i}<small>${l}</small></button>`).join('');clock()}
  const subjectName=id=>{
  for(const g of S.groups)
