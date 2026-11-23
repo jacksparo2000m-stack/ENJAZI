@@ -888,6 +888,9 @@ const H={dlnew:()=>openDeadlineSheet(),dledit:i=>openDeadlineSheet(i),dlclose:()
     check.getUTCDate()!==+dateMatch[3])
   return toast(T('تاريخ الموعد غير صالح','Invalid deadline date'));
 
+ if(!Array.isArray(S.deadlines))
+ return toast(T('تعذر التحقق من قائمة المواعيد','Could not validate deadlines'));
+
  const taskIds=[...document.querySelectorAll('input[name="dlTask"]:checked')]
   .map(el=>el.value);
 
@@ -897,8 +900,7 @@ const H={dlnew:()=>openDeadlineSheet(),dledit:i=>openDeadlineSheet(i),dlclose:()
  if(taskIds.some(id=>!S.tasks.some(task=>task.id===id)))
   return toast(T('إحدى المهام المختارة لم تعد موجودة','A selected task no longer exists'));
 
- if(!Array.isArray(S.deadlines))
- return toast(T('تعذر التحقق من قائمة المواعيد','Could not validate deadlines'));
+ 
 
 const index=S.deadlines.findIndex(d=>d.id===DL.id);
 
