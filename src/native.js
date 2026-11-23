@@ -265,5 +265,6 @@ window.NativePlugins = {
   Encoding,
   Share,
   PersistentTasks,
+  consumePendingDeadline,
   LocalNotifications: NativeLocalNotifications
 };
