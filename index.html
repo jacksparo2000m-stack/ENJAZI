@@ -694,6 +694,9 @@ function openDeadlineSheet(id=null){
    </div>
 
    <div class="two" style="margin-top:16px">
+    ${existing?`<button class="btn o" data-a="dldel">
+     ${T('حذف الموعد','Delete deadline')}
+    </button>`:''}
     <button class="btn o" data-a="dlclose">
      ${T('إلغاء','Cancel')}
     </button>
