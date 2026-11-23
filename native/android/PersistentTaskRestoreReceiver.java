@@ -20,6 +20,8 @@ public class PersistentTaskRestoreReceiver extends BroadcastReceiver {
             PersistentTaskNotifications.restore(context);
 
             PriorityOneTaskScheduler.restore(context);
+
+            DeadlineNotifications.restore(context);
         }
     }
 }
