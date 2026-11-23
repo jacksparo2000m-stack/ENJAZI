@@ -384,6 +384,46 @@ test('native plugin rejects malformed sync calls instead of clearing notices', (
 });
 
 
+test('notification taps reach task and deadline handlers while app is open', () => {
+  const plugin = fs.readFileSync(
+    path.join(root, 'native/android/PersistentTasksPlugin.java'),
+    'utf8'
+  );
+
+  assert.match(
+    plugin,
+    /handleOnNewIntent\(android\.content\.Intent intent\)/
+  );
+  assert.match(
+    plugin,
+    /notifyListeners\("notificationOpen", data, true\)/
+  );
+
+  assert.match(
+    native,
+    /PersistentTasks\.addListener\('notificationOpen'/
+  );
+  assert.match(
+    native,
+    /enjazi-native-task-open/
+  );
+  assert.match(
+    native,
+    /enjazi-native-deadline-open/
+  );
+
+  assert.match(
+    html,
+    /window\.addEventListener\('enjazi-native-task-open',consumeNativeTaskLaunch\)/
+  );
+  assert.match(
+    html,
+    /window\.addEventListener\('enjazi-native-deadline-open',consumeNativeDeadlineLaunch\)/
+  );
+});
+
+
+
 test('persistent task notifications are ongoing and low importance', () => {
   const persistent = fs.readFileSync(
     path.join(root, 'native/android/PersistentTaskNotifications.java'),
