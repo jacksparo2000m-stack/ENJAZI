@@ -7,6 +7,18 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { registerPlugin } from '@capacitor/core';
 
 const PersistentTasks = registerPlugin('PersistentTasks');
+async function syncPersistentDeadlines(deadlines) {
+  if (!Array.isArray(deadlines)) {
+    throw new Error('Invalid deadlines collection');
+  }
+
+  return PersistentTasks.syncDeadlines({ deadlines });
+}
+
+async function consumePendingDeadline() {
+  return PersistentTasks.consumePendingDeadline();
+}
+
 const TASKS_STORAGE_KEY = 'pt2';
 
 function notificationId(value) {
