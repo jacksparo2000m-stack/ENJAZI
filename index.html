@@ -503,10 +503,13 @@ const save=(scheduleNotifications=true)=>{
   return true;
  };
  return enqueueSaveOperation(run).then(ok=>{
-  clearTimeout(save.t);
-  save.t=ok&&scheduleNotifications?setTimeout(()=>window.sched&&sched(),300):null;
+  if(ok&&scheduleNotifications){
+   clearTimeout(save.t);
+   save.t=setTimeout(()=>window.sched&&sched(),300);
+  }
   return ok;
- });
+});
+ 
 },T=(a,e)=>S.lang==='ar'?a:e,loc=()=>S.lang==='ar'?'ar-EG':'en-GB';
 const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const due=x=>x.d?new Date(x.d+'T'+(x.tm||'23:59')):null,od=x=>!x.x&&due(x)&&due(x)<new Date();
