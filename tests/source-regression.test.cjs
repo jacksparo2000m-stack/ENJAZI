@@ -758,3 +758,74 @@ test('priority one rescheduling cancels the old notification before showing newl
     /PersistentTaskNotifications\.show/
   );
 });
+
+
+test('Deadline notification builder preserves active and empty-link deadlines', () => {
+  const start = native.indexOf('// Reserved notification ID range');
+  const end = native.indexOf('// Read the same saved task state', start);
+
+  assert.ok(start >= 0 && end > start);
+
+  const source = native.slice(start, end) +
+    '\n;({ buildPersistentDeadlines, deadlineNotificationId })';
+
+  const helpers = vm.runInNewContext(source, {
+    Date, Math, Map, Set, String, Number, Error
+  });
+
+  const state = {
+    tasks: [
+      { id: 'task-1', x: 1 },
+      { id: 'task-2', x: 0 }
+    ],
+    deadlines: [
+      {
+        id: 'completed',
+        title: 'Completed',
+        dueDate: '2027-01-02',
+        dueTime: '12:30',
+        taskIds: ['task-1']
+      },
+      {
+        id: 'active',
+        title: 'Active',
+        dueDate: '2027-01-03',
+        dueTime: '13:00',
+        taskIds: ['task-1', 'task-2']
+      },
+      {
+        id: 'empty',
+        title: 'No linked tasks',
+        dueDate: '2027-01-04',
+        dueTime: '14:00',
+        taskIds: []
+      },
+      {
+        id: 'missing',
+        title: 'Deleted linked task',
+        dueDate: '2027-01-05',
+        dueTime: '15:00',
+        taskIds: ['deleted-task']
+      }
+    ]
+  };
+
+  const result = helpers.buildPersistentDeadlines(state);
+
+  assert.deepEqual(
+    Array.from(result, item => item.deadlineId),
+    ['active', 'empty', 'missing']
+  );
+
+  assert.equal(
+    new Set(result.map(item => item.notificationId)).size,
+    result.length
+  );
+
+  for (const item of result) {
+    assert.ok(item.notificationId >= 2000000001);
+    assert.ok(item.notificationId <= 2147483647);
+    assert.ok(Number.isFinite(item.dueAt));
+  }
+});
+
