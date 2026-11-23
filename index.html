@@ -723,7 +723,7 @@ function deadlinesView(){
   ${sorted.map(d=>{
    const ids=Array.isArray(d.taskIds)?d.taskIds:[];
    const completed=isDeadlineCompleted(d);
-   return `<div class="card">
+   return `<div class="card" data-a="dledit" data-i="${E(d.id)}">
     <div class="row">
      <b>${E(d.title||'')}</b>
      <span class="tag">${completed?T('مكتمل','Completed'):T('نشط','Active')}</span>
