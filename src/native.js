@@ -7,6 +7,19 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { registerPlugin } from '@capacitor/core';
 
 const PersistentTasks = registerPlugin('PersistentTasks');
+PersistentTasks.addListener('notificationOpen', notification => {
+  if (notification?.taskId) {
+    window.dispatchEvent(
+      new Event('enjazi-native-task-open')
+    );
+  }
+
+  if (notification?.deadlineId) {
+    window.dispatchEvent(
+      new Event('enjazi-native-deadline-open')
+    );
+  }
+});
 async function syncPersistentDeadlines(deadlines) {
   if (!Array.isArray(deadlines)) {
     throw new Error('Invalid deadlines collection');
