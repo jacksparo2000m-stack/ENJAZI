@@ -4,7 +4,16 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { registerPlugin } from '@capacitor/core'; import { App } from '@capacitor/app';
+import { registerPlugin } from '@capacitor/core';
+import { App } from '@capacitor/app';
+
+App.addListener('backButton', ({ canGoBack }) => {
+  window.dispatchEvent(
+    new CustomEvent('enjazi-native-back', {
+      detail: { canGoBack }
+    })
+  );
+});
 
 const PersistentTasks = registerPlugin('PersistentTasks');
 PersistentTasks.addListener('notificationOpen', notification => {
