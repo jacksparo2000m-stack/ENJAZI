@@ -250,7 +250,7 @@ Status: IMPLEMENTED / AUTOMATED TESTS PASSED / DEVICE VERIFICATION PARTIALLY COM
 
 Improvement 2 — Expandable notification details
 
-Status: CONFIRMED / IMPLEMENTATION AND DEVICE VERIFICATION PENDING.
+Status: IMPLEMENTED IN SOURCE / DEVICE VERIFICATION PENDING.
 
 - Allow task notifications to expand in the Android notification shade.
 - Show useful task details without requiring the app to open.
