@@ -232,7 +232,7 @@ Phase 3 — Confirmed product improvements
 
 Status: IN PROGRESS — requirements confirmed; implementation and verification are tracked individually.
 
-The following six improvements are confirmed and must remain tracked until implementation and verification are complete.
+The following 7 improvements are confirmed and must remain tracked until implementation and verification are complete.
 
 Improvement 1 — Priority 1 task persistent notifications
 
