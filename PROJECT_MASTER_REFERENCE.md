@@ -236,7 +236,7 @@ The following six improvements are confirmed and must remain tracked until imple
 
 Improvement 1 — Priority 1 task persistent notifications
 
-Status: IMPLEMENTATION IN PROGRESS.
+Status: IMPLEMENTED / AUTOMATED TESTS PASSED / DEVICE VERIFICATION PARTIALLY COMPLETED.
 
 - Applies to priority 1 tasks only.
 - Before the scheduled due date/time, no persistent notification should appear.
