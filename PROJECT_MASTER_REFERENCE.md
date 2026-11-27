@@ -313,7 +313,26 @@ Expected behavior:
 
 Improvement 7 — ENJAZI Deadlines
 
-Status: CONFIRMED / IMPLEMENTATION NOT STARTED.
+Status: IMPLEMENTED / CORE BEHAVIOR TESTED / BROADER NOTIFICATION VERIFICATION PENDING.
+
+Verified behavior:
+- Multiple independent deadlines are supported.
+- Deadline title, description, due date/time, and linked tasks are supported.
+- Persistent deadline notification displays its title and countdown.
+- Tapping the notification opens the deadline details.
+- Completed tasks are hidden from the task-selection list.
+- Existing completed task links are preserved when saving an edited deadline.
+- Completing all linked tasks completes the deadline automatically.
+- Reopening a linked task returns the deadline to Active and restores its notification.
+- Deleting a linked task unlinks it without deleting the deadline.
+
+Pending verification:
+- Notification restoration after device reboot.
+- Full notification behavior across Android 8.1 and Android 12.
+- Countdown updates after editing the due date/time.
+- Interaction with Priority 1 task notifications.
+- Battery consumption and background activity.
+- Broader regression testing of all deadline lifecycle scenarios.
 
 Core behavior:
 - Support multiple independent deadlines.
