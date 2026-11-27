@@ -436,6 +436,20 @@ test('notification taps reach task and deadline handlers while app is open', () 
 });
 
 
+test('Android back button navigates through ENJAZI screens before exiting', () => {
+  assert.match(native, /import\s+\{\s*App\s*\}\s+from\s+'@capacitor\/app'/);
+  assert.match(native, /App\.addListener\('backButton'/);
+  assert.match(native, /enjazi-native-back/);
+  assert.match(native, /enjazi-native-exit/);
+  assert.match(native, /App\.exitApp\(\)/);
+
+  assert.match(html, /window\.addEventListener\('enjazi-native-back'/);
+  assert.match(html, /if\s*\(RECOVERY\)\s*return/);
+  assert.match(html, /if\s*\(v\s*===\s*'track'\s*&&\s*\(P\.i\s*\|\|\s*P\.g\)\)/);
+  assert.match(html, /if\s*\(v\s*!==\s*'todo'\)/);
+  assert.match(html, /new Event\('enjazi-native-exit'\)/);
+});
+
 
 test('persistent task notifications are ongoing and low importance', () => {
   const persistent = fs.readFileSync(
