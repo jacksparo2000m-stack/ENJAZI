@@ -1521,6 +1521,44 @@ async function consumeNativeDeadlineLaunch(){
 async function consumeNativeTaskLaunch(){if(RECOVERY||!NP.PersistentTasks||typeof NP.PersistentTasks.consumePendingTask!=='function')return;try{const result=await NP.PersistentTasks.consumePendingTask();const taskId=result&&result.taskId;if(taskId){const task=S.tasks.find(x=>x.id===taskId);if(task)openSheet(taskId);else toast(T('المهمة المرتبطة بالإشعار غير موجودة','The task linked to the notification was not found'))}}catch(e){console.error('ENJAZI notification launch handling failed:',e)}}
 window.addEventListener('enjazi-native-task-open',consumeNativeTaskLaunch);
 window.addEventListener('enjazi-native-deadline-open',consumeNativeDeadlineLaunch);
+window.addEventListener('enjazi-native-back', () => {
+  if (RECOVERY) return;
+
+  const sheet = $('#sh');
+
+  if (sheet && !sheet.hidden) {
+    if (ND) {
+      H.nclose();
+      return;
+    }
+
+    if (DL) {
+      H.dlclose();
+      return;
+    }
+
+    if (D) {
+      H.cx();
+      return;
+    }
+
+    sheet.hidden = 1;
+    return;
+  }
+
+  if (v === 'track' && (P.i || P.g)) {
+    H.bk();
+    return;
+  }
+
+  if (v !== 'todo') {
+    v = 'todo';
+    render();
+    return;
+  }
+
+  window.dispatchEvent(new Event('enjazi-native-exit'));
+});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!RECOVERY&&!BOOTING){tick();pins();sched();render();consumeNativeTaskLaunch()}});
 setInterval(()=>{if(!CAP||!LN)tick()},20000); setInterval(()=>{if(RECOVERY||BOOTING||(CAP&&LN&&document.hidden))return;clock();if(v==='todo'&&$('#lst')&&$('#sh').hidden&&document.activeElement.tagName!=='INPUT')$('#lst').innerHTML=lst()},20000);
 bootReady.then(()=>{BOOTING=false;if(!CAP&&'serviceWorker'in navigator&&!RECOVERY)navigator.serviceWorker.register('sw.js').then(()=>pins()).catch(()=>{});render();if(!RECOVERY){tick();initN();const launchTaskId=new URLSearchParams(location.search).get('taskId');if(launchTaskId){const launchTask=S.tasks.find(x=>x.id===launchTaskId);if(launchTask)openSheet(launchTaskId);else toast(T('المهمة المرتبطة بالإشعار غير موجودة','The task linked to the notification was not found'))}else{  consumeNativeDeadlineLaunch();  consumeNativeTaskLaunch(); }}})
