@@ -25,29 +25,30 @@ tests/source-regression.test.cjs blob SHA:
 "16da73a4edecec945e290692b30d22b27aaddcb3"
 
 
-Latest verified release: v1.271
-Workflow run: #271
-Run ID: 45014638475
-Commit: bad13c74bd5988ab9790dac650c6f3da9361ac3b
+Latest verified release: v1.345
+Workflow run: #345
+Run ID: 45992927947
+Commit: c5f01a2acd1547e542ba736edc49bf14a9008712
 Branch: fix/primary-storage-before-backup
 Workflow conclusion: success
-Automated test suite: 79 passed, 0 failed
-npm run check: success
 Android build: success
 APK identity and signing verification: success
 Packaged web assets verification: success
 Artifact upload: success
 GitHub Release publication: success
 
+Device installation verification:
+- The user installed the update over the existing app.
+- Existing app data remained present after installation.
+
 Release URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.271
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.345
 
 Workflow URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/45014638475
+https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/45992927947
 
 APK URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.271/enjazi.apk
-
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.345/enjazi.apk
 
 ### Import review — implementation and automated verification completed
 
