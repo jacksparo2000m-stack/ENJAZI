@@ -4,7 +4,7 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin } from '@capacitor/core'; import { App } from '@capacitor/app';
 
 const PersistentTasks = registerPlugin('PersistentTasks');
 PersistentTasks.addListener('notificationOpen', notification => {
