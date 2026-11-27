@@ -184,18 +184,20 @@ async function syncPersistentTasksFromStorage() {
   buildPersistentDeadlines(state, ar);
 
     // Existing priority 2/3 notifications — behavior unchanged.
-    const notifications = state.tasks
+        const notifications = state.tasks
       .filter(task => task && !task.x && Number(task.p) >= 2)
       .map(task => ({
         id: notificationId('p' + task.id),
         title: String(task.t || ''),
-        body: (Number(task.p) > 2
-          ? (ar ? 'مهمة مهمة جدًا' : 'Very important task')
-          : (ar ? 'مهمة متوسطة' : 'Medium priority task'))
-          + (task.d ? ' · ' + String(task.d) : '')
+        body: [
+          String(task.n || '').trim(),
+          (Number(task.p) > 2
+            ? (ar ? 'مهمة مهمة جدًا' : 'Very important task')
+            : (ar ? 'مهمة متوسطة' : 'Medium priority task')),
+          task.d ? String(task.d) : ''
+        ].filter(Boolean).join('\n')
       }))
       .filter(item => item.title.trim());
-
     // Priority 1 tasks: schedule only tasks that have a due date.
 const priorityOneTasks = state.tasks
   .filter(task =>
