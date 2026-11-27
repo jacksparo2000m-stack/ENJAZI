@@ -14,6 +14,9 @@ App.addListener('backButton', ({ canGoBack }) => {
     })
   );
 });
+window.addEventListener('enjazi-native-exit', () => {
+  App.exitApp();
+});
 
 const PersistentTasks = registerPlugin('PersistentTasks');
 PersistentTasks.addListener('notificationOpen', notification => {
