@@ -686,16 +686,18 @@ updatedAt:Date.now()
  
    <label>${T('المهام المرتبطة','Linked tasks')}</label>
 
-   <div class="card">
-    ${S.tasks.length?S.tasks.map(task=>`
-     <label style="display:block;margin:10px 0">
-      <input type="checkbox" name="dlTask"
- value="${E(task.id)}"
- ${DL.taskIds.includes(task.id)?'checked':''}>
-      ${E(task.t||'')}
-     </label>
-    `).join(''):`<p>${T('لا توجد مهام لإضافتها حاليًا','No tasks available')}</p>`}
-   </div>
+<div class="card">
+ ${S.tasks.filter(task=>!task.x).length
+ ?S.tasks.filter(task=>!task.x).map(task=>`
+  <label style="display:block;margin:10px 0">
+   <input type="checkbox" name="dlTask"
+    value="${E(task.id)}"
+    ${DL.taskIds.includes(task.id)?'checked':''}>
+   ${E(task.t||'')}
+  </label>
+ `).join('')
+ :`<p>${T('لا توجد مهام غير منجزة متاحة','No unfinished tasks available')}</p>`}
+</div>
 
    <div class="two" style="margin-top:16px">
     ${existing?`<button class="btn o" data-a="dldel">
