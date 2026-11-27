@@ -138,6 +138,19 @@ test('deadlines are validated with stable IDs, dates, timestamps, and task links
   assert.match(validator, /new Set\(d\.taskIds\)/);
   assert.match(validator, /taskIds\.has\(taskId\)/);
 });
+test('deadline task picker hides completed tasks and preserves existing completed links', () => {
+  assert.match(html, /S\.tasks\.filter\(task=>!task\.x\)/);
+
+  assert.match(
+    html,
+    /const previouslyLinkedCompletedTaskIds=DL\.taskIds\.filter\(id=>[\s\S]*?S\.tasks\.some\(task=>task\.id===id&&task\.x\)/
+  );
+
+  assert.match(
+    html,
+    /const taskIds=\[\.\.\.new Set\(\[[\s\S]*?selectedTaskIds,[\s\S]*?previouslyLinkedCompletedTaskIds/
+  );
+});
 
 test('notepad save calculates projected limits correctly for create and edit', () => {
   assert.match(html, /const index=S\.notes\.findIndex\(n=>n\.id===ND\.id\)/);
