@@ -250,7 +250,7 @@ Status: IMPLEMENTED / AUTOMATED TESTS PASSED / DEVICE VERIFICATION PARTIALLY COM
 
 Improvement 2 — Expandable notification details
 
-Status: IMPLEMENTED IN SOURCE / DEVICE VERIFICATION PENDING.
+Status: COMPLETED / AUTOMATED SOURCE VERIFICATION PASSED / DEVICE VERIFIED ON ANDROID 12 AND ANDROID 8.1.
 
 - Allow task notifications to expand in the Android notification shade.
 - Show useful task details without requiring the app to open.
@@ -394,7 +394,27 @@ Implementation and verification policy
 - After each release, ask only for a safe, relevant confirmation (e.g. app opens and existing subjects remain); do not ask the user to create artificial tasks just to satisfy diagnostics.
 
 ## 7. Change log
+2026-11-27 — Expandable task notification details completed
 
+Implementation:
+
+- Task notifications for active priority 2/3 tasks now include the original task description ("task.n").
+- Notification body includes the priority label and task date when available.
+- Existing notification IDs, titles, and synchronization behavior are preserved.
+- Android notification uses BigTextStyle to display expanded text.
+
+Actual device verification:
+
+- Android 12: successful; task descriptions appeared in expanded notifications.
+- Android 8.1: successful; task descriptions appeared in expanded notifications.
+- The user confirmed that descriptions appeared for all tested tasks.
+
+Data preservation:
+
+- The update was installed over the existing application on both devices.
+- The user confirmed that existing data remained present on both devices.
+
+Status: EXPANDABLE TASK NOTIFICATION DETAILS COMPLETED AND VERIFIED ON BOTH TESTED ANDROID VERSIONS.
 
 ### 2026-11-27 — Android Back navigation completed and verified
 
