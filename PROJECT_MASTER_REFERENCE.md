@@ -368,6 +368,63 @@ Implementation and verification policy
 
 ## 7. Change log
 
+
+### 2026-11-27 — Android Back navigation completed and verified
+
+Implementation:
+- Added `@capacitor/app` dependency (`^8.0.0`) in `package.json`.
+- Added the native Android `backButton` listener in `src/native.js`.
+- Added the `enjazi-native-back` event to connect native Back events to application navigation.
+- Added the `enjazi-native-exit` event to call `App.exitApp()` only when the user is on the Tasks home screen.
+- Added Back navigation handling in `index.html`.
+- Added source regression coverage in `tests/source-regression.test.cjs`:
+  `Android back button navigates through ENJAZI screens before exiting`.
+
+Automated verification:
+- GitHub Actions run #345 succeeded.
+- Commit: `c5f01a2acd1547e542ba736edc49bf14a9008712`.
+
+Actual device verification:
+- Android 12: successful.
+- Android 8.1: successful.
+- Deadline details close without exiting the application.
+- Back from the Deadlines screen returns to Tasks.
+- Back on the Tasks home screen exits the application.
+- Progress navigation returns from subject details to section, then to Progress root.
+- Notepad editor returns to the notes list, then to Tasks.
+- Task details and task editing close correctly without exiting the application.
+
+Data preservation:
+- The new APK was installed as an update over the existing application.
+- The user confirmed that existing application data remained present after the update.
+
+Status: ANDROID BACK NAVIGATION COMPLETED AND VERIFIED ON BOTH TESTED ANDROID VERSIONS.
+
+### 2026-11-27 — ENJAZI Deadlines implementation and device tests
+
+Verified implementation and behavior:
+- Multiple independent deadlines are supported.
+- Deadlines have titles, descriptions, due dates/times, and linked task IDs.
+- Persistent deadline notifications display a countdown.
+- Deadline notifications open the corresponding deadline screen.
+- Completed tasks are hidden from the deadline task-selection list.
+- Existing linked completed tasks remain linked when an existing deadline is saved.
+- Completing all linked tasks completes the deadline automatically.
+- Reopening a linked task returns the deadline to Active and restores its notification.
+- Deleting a linked task unlinks it without deleting the deadline.
+
+Device testing:
+- The user confirmed that the deadline notification appeared with its title and countdown.
+- Tapping the notification opened the corresponding deadline details.
+- Deadline notification behavior and linked-task selection received actual-device testing.
+
+Important:
+- Do not treat this entry as proof that every notification scenario, reboot scenario, Android 8.1 notification behavior, or battery-impact test has been completed.
+- Those checks remain part of the upcoming notification review.
+
+Status: DEADLINES IMPLEMENTED; CORE BEHAVIOR TESTED. BROADER NOTIFICATION AND BATTERY REVIEW REMAINS PENDING.
+
+
 2026-11-19 — Migration review verified and v1.191 released
 
 ### 2026-11-19 — Restore automated tests and v1.180 release
