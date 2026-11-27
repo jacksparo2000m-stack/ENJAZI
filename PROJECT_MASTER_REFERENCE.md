@@ -236,7 +236,7 @@ The following 7 improvements are confirmed and must remain tracked until impleme
 
 Improvement 1 — Priority 1 task persistent notifications
 
-Status: IMPLEMENTED / AUTOMATED TESTS PASSED / DEVICE VERIFICATION PARTIALLY COMPLETED.
+Status: COMPLETED / AUTOMATED TESTS PASSED / FULL DEVICE LIFECYCLE VERIFIED ON ANDROID 12 AND ANDROID 8.1.
 
 - Applies to priority 1 tasks only.
 - Before the scheduled due date/time, no persistent notification should appear.
@@ -394,6 +394,32 @@ Implementation and verification policy
 - After each release, ask only for a safe, relevant confirmation (e.g. app opens and existing subjects remain); do not ask the user to create artificial tasks just to satisfy diagnostics.
 
 ## 7. Change log
+
+2026-11-27 — Priority 1 persistent task notifications completed
+
+Implementation:
+
+- Priority 1 notifications are scheduled for the task due date/time.
+- Notifications remain persistent after appearing.
+- Original task title and full description are displayed.
+- Removing the task due date/time cancels its persistent notification.
+- Changing the due date/time cancels the old schedule and uses the new one.
+- Completing the task removes its notification.
+- Pending notifications are restored after device reboot.
+
+Actual device verification:
+
+- Android 12: all listed lifecycle tests passed.
+- Android 8.1: all listed lifecycle tests passed.
+- The user confirmed successful notification display, full task description, cancellation after removing the due date, correct rescheduling after changing the due date, removal after task completion, and restoration after reboot.
+
+Data preservation:
+
+- Existing application data remained intact during the tested updates.
+
+Status: PRIORITY 1 PERSISTENT TASK NOTIFICATIONS COMPLETED AND VERIFIED ON ANDROID 12 AND ANDROID 8.1.
+
+
 2026-11-27 — Expandable task notification details completed
 
 Implementation:
