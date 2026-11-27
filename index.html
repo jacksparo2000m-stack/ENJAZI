@@ -893,8 +893,17 @@ const H={dlnew:()=>openDeadlineSheet(),dledit:i=>openDeadlineSheet(i),dlclose:()
  if(!Array.isArray(S.deadlines))
  return toast(T('تعذر التحقق من قائمة المواعيد','Could not validate deadlines'));
 
- const taskIds=[...document.querySelectorAll('input[name="dlTask"]:checked')]
+ const selectedTaskIds=[...document.querySelectorAll('input[name="dlTask"]:checked')]
   .map(el=>el.value);
+
+const previouslyLinkedCompletedTaskIds=DL.taskIds.filter(id=>
+ S.tasks.some(task=>task.id===id&&task.x)
+);
+
+const taskIds=[...new Set([
+ ...selectedTaskIds,
+ ...previouslyLinkedCompletedTaskIds
+])];
 
  if(!taskIds.length&& !S.deadlines.some(d=>d.id===DL.id))
   return toast(T('اختر مهمة واحدة على الأقل','Select at least one task'));
