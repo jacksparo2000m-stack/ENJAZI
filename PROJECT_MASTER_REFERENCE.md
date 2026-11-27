@@ -293,7 +293,14 @@ Status: CONFIRMED / DETAILED SPECIFICATION MUST BE REVIEWED BEFORE IMPLEMENTATIO
 
 Improvement 6 — In-app and Android system Back navigation
 
-Status: CONFIRMED / NOT IMPLEMENTED.
+Status: COMPLETED / AUTOMATED TESTS PASSED / VERIFIED ON ANDROID 12 AND ANDROID 8.1.
+
+Verification:
+- GitHub Actions run #345 succeeded.
+- Android system Back navigation was tested on both Android versions.
+- Nested screens return to their appropriate parent screens.
+- The app exits only when Back is pressed from the Tasks home screen.
+- Existing app data remained present after installing the update.
 
 Expected behavior:
 
