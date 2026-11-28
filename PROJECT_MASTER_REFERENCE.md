@@ -12,43 +12,28 @@
 - Android workflow: `.github/workflows/android.yml`
 
 
-Latest branch snapshot checked while preparing this reference:
-Branch: "fix/primary-storage-before-backup"
+Latest branch snapshot checked: 2026-11-28
 
-index.html blob SHA:
-"95d77da74e624baeb207ae928a6530de4a4d6e29"
+Branch: fix/primary-storage-before-backup
 
-tests/backup-runtime.test.cjs blob SHA:
-"9793aaf775b74b0c32de36c944945264cfb5ab6e"
+Latest branch commit:
+4cfac7fe5940517a5cb79c47b4e337e3ad2f95d3
 
-tests/source-regression.test.cjs blob SHA:
-"022997889774ba0dca75a9f48fa026bca798fd96"
-
-
-Latest verified release: v1.345
-Workflow run: #345
-Run ID: 45992927947
-Commit: c5f01a2acd1547e542ba736edc49bf14a9008712
+Latest verified release: v1.356
+Workflow run: #356
+Run ID: 46000616878
 Branch: fix/primary-storage-before-backup
 Workflow conclusion: success
-Android build: success
-APK identity and signing verification: success
-Packaged web assets verification: success
-Artifact upload: success
-GitHub Release publication: success
 
-Device installation verification:
-- The user installed the update over the existing app.
-- Existing app data remained present after installation.
+Automated tests:
+86 passed, 0 failed.
 
 Release URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.345
+https://github.com/jacksparo2000m-stack/ENJAZI/releases/tag/v1.356
 
 Workflow URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/45992927947
+https://github.com/jacksparo2000m-stack/ENJAZI/actions/runs/46000616878
 
-APK URL:
-https://github.com/jacksparo2000m-stack/ENJAZI/releases/download/v1.345/enjazi.apk
 
 ### Import review — implementation and automated verification completed
 
