@@ -3,9 +3,10 @@ ENJAZI — Product Roadmap
 Project: ENJAZI (إنجازي)
 Repository: "jacksparo2000m-stack/ENJAZI"
 Branch: "fix/primary-storage-before-backup"
-Last updated: 2026-11-16
-Status: Active Development
-
+Last updated: 2026-11-28
+Latest verified release: v1.356
+Latest verified workflow: #356
+Status: Active Development — Documentation Review
 ---
 
 1. Product Vision
